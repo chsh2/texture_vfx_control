@@ -1,0 +1,6 @@
+.vscode/
+__pycache__/
+/tests/
+*.py[cod]
+*.blend1
+*.zip
