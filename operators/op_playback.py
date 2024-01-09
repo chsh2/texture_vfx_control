@@ -1,12 +1,6 @@
 import bpy
-from .utils import get_target_node
-
-def add_driver_variable(driver, id, data_path, name):
-    var = driver.variables.new()
-    var.name = name
-    var.type = 'SINGLE_PROP'
-    var.targets[0].id = id
-    var.targets[0].data_path = f'["{data_path}"]'
+from ..utils.driver import add_driver_variable
+from ..utils.node import get_target_node
 
 class AddTexturePlaybackDriverOperator(bpy.types.Operator):
     """Map the playback of a movie/sequence texture to a custom float property by adding a driver to the offset value"""
@@ -114,13 +108,8 @@ class AddTexturePlaybackDriverOperator(bpy.types.Operator):
             add_driver_variable(playback_driver.driver, obj, datapath_start, 's')
             add_driver_variable(playback_driver.driver, obj, datapath_playhead, 'p')
             add_driver_variable(playback_driver.driver, obj, datapath_duration, 'd')
-            
-            scene_var = playback_driver.driver.variables.new()
-            scene_var.name = 't'
-            scene_var.type = 'SINGLE_PROP'
-            scene_var.targets[0].id_type = 'SCENE'
-            scene_var.targets[0].id = bpy.context.scene
-            scene_var.targets[0].data_path = 'frame_current'  
+            add_driver_variable(playback_driver.driver, bpy.context.scene, 'frame_current', 't',
+                                id_type='SCENE', custom_property=False)
             
             playback_driver.driver.expression = 'min(max(floor(p*d)+s-t, s-t), s+d-t-1)'
             

@@ -5,7 +5,7 @@ bl_info = {
     "description" : "Shader-based video playback control and composition VFXs",
     "blender" : (3, 3, 0),
     "version" : (0, 1, 0),
-    "location" : "Node Editor",
+    "location" : "View3D > Object > Quick Effects, or Shader Editor > Add",
     "warning" : "This addon is still in an early stage of development",
     "doc_url": "",
     "wiki_url": "",

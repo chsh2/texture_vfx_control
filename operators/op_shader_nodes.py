@@ -1,16 +1,8 @@
 import bpy
-from .utils import append_node_group, get_target_node, copy_driver
-
-def add_node_group(node_tree, name, location=(0,0)) -> bpy.types.ShaderNodeGroup:
-    node = node_tree.nodes.new('ShaderNodeGroup')
-    node.node_tree = append_node_group(name)
-    node.location = location
-    return node
-
-def add_uv_input(node_tree, location=(0,0)) -> bpy.types.ShaderNodeUVMap:
-    node = node_tree.nodes.new('ShaderNodeUVMap')
-    node.location = location
-    return node    
+import math
+from ..utils.asset import append_node_group
+from ..utils.node import *
+from ..utils.driver import copy_driver, add_driver_variable
 
 def get_fx_chain_info(tex_node, fx_types=['tfx_ChromaKey']):
     """
@@ -283,10 +275,10 @@ class OutlineOperator(bpy.types.Operator):
             default = (1.0,1.0,.0,1.0),
             min = 0.0, max = 1.0, size = 4,
     )
-    outline_size: bpy.props.FloatVectorProperty(
+    outline_size: bpy.props.FloatProperty(
             name = "Size",
-            default = (0.5, 0.5),
-            min = 0, soft_max = 5, size = 2, step = 1
+            default = 0.5,
+            min = 0, soft_max = 5, step = 1
     )
     outline_outer: bpy.props.BoolProperty(
             name = "Outer Contour",
@@ -300,15 +292,45 @@ class OutlineOperator(bpy.types.Operator):
         name='Blur',
         default=0, min=0, max=0.1, step=1
     )
-              
+    directional: bpy.props.BoolProperty(
+            name='Directional',
+            default = False
+    ) 
+    direction: bpy.props.EnumProperty(
+            name='Direction',
+            items=[('FIXED', 'Fixed Angle', ''),
+                    ('REF', 'Following a Light', '')],
+            default='FIXED'
+    ) 
+    angle: bpy.props.FloatProperty(
+            name='Angle',
+            default=0.25*math.pi, min=-2*math.pi, max=2*math.pi,
+            unit='ROTATION',
+    )
+    light_name: bpy.props.StringProperty(
+        name='Source',
+        default='',
+        search=lambda self, context, edit_text: [obj.name for obj in context.scene.objects]
+    )
+                  
     def draw(self, context):
         layout = self.layout
         layout.prop(self, 'outline_color')
         layout.prop(self, 'outline_size')
-        layout.prop(self, 'outline_outer')
-        layout.prop(self, 'outline_inner')
+        row = layout.row()
+        row.prop(self, 'outline_outer')
+        row.prop(self, 'outline_inner')
         layout.prop(self, 'blur_strength')
-        
+        layout.prop(self, 'directional')
+        if self.directional:
+            layout.prop(self, 'direction')
+            if self.direction == 'FIXED':
+                layout.prop(self, 'angle')
+            else:
+                layout.label(text="Light Information:")
+                box = layout.box()
+                box.prop(self, 'light_name')
+                    
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
             
@@ -323,7 +345,9 @@ class OutlineOperator(bpy.types.Operator):
         if not tex_node:
             self.report({"WARNING"}, "Cannot find any eligible texture node to perform the operation.")
             return {'FINISHED'}
-        
+        if tex_node.extension == 'CLIP':
+            tex_node.extension = 'EXTEND'
+            
         # Duplicate nodes for edge detection
         node_chain, inside_links, output_color_links, output_alpha_links, \
             output_color_socket, output_alpha_socket = get_fx_chain_info(tex_node)
@@ -359,18 +383,63 @@ class OutlineOperator(bpy.types.Operator):
         post_node = add_node_group(target_node_tree, 'tfx_OutlinePost', 
                                    location=(node_chain[-1].location[0] + 200, 
                                              node_chain[-1].location[1]))
+        post_node.inputs['Color'].default_value = self.outline_color
+        post_node.inputs['Inner'].default_value = float(self.outline_inner)
+        post_node.inputs['Outer'].default_value = float(self.outline_outer)
+
+        # Set offset values considering different factors
+        ratio = tex_node.image.size[0] / tex_node.image.size[1]
+        converted_outline_size = [self.outline_size / 100.0, self.outline_size * ratio / 100.0] if ratio < 1 \
+                            else [self.outline_size / ratio / 100.0, self.outline_size / 100.0]
+        if self.directional and self.direction == 'FIXED':
+            pre_node.inputs['U_Offset'].default_value = converted_outline_size[0] * math.cos(self.angle)
+            pre_node.inputs['V_Offset'].default_value = converted_outline_size[1] * math.sin(self.angle)  
+        else:
+            pre_node.inputs['U_Offset'].default_value = converted_outline_size[0]
+            pre_node.inputs['V_Offset'].default_value = converted_outline_size[1]      
+            
+        # If use a light source, add extra node groups and drivers   
+        if self.directional and self.direction == 'REF':
+            light_obj = context.scene.objects[self.light_name] if self.light_name in context.scene.objects else None
+            if light_obj:
+                light_node = add_node_group(target_node_tree, 'tfx_LightVector', 
+                                        location=(pre_node.location[0] - 200, 
+                                                  pre_node.location[1] - 150))
+                # Set light direction: currently only supports point light
+                target_node_tree.links.new(light_node.outputs['X'], pre_node.inputs['U_Offset'])
+                target_node_tree.links.new(light_node.outputs['Y'], pre_node.inputs['V_Offset'])
+                light_loc_drivers = light_node.inputs['Light'].driver_add('default_value')
+                for i,dr in enumerate(light_loc_drivers):
+                    dr.driver.type = 'SCRIPTED'
+                    add_driver_variable(dr.driver, light_obj, f'location[{i}]', 'var', custom_property=False)
+                    dr.driver.expression = 'var'
+                # Set light strength
+                light_node.inputs['Scale'].default_value[0] = converted_outline_size[0]
+                light_node.inputs['Scale'].default_value[1] = converted_outline_size[1]
+                
+                # Set light color: disabled for now
+                if False and light_obj.type == 'LIGHT':
+                    light_color_drivers = post_node.inputs['Color'].driver_add('default_value')
+                    for i,dr in enumerate(light_color_drivers):
+                        dr.driver.type = 'SCRIPTED'
+                        if i < 3:
+                            add_driver_variable(dr.driver, light_obj.data, f'color[{i}]', 'var', 
+                                                id_type='LIGHT', custom_property=False)
+                            dr.driver.expression = 'var'
+                        else:
+                            dr.driver.expression = '1.0'                        
+                
+        # Connect to the FX nodes
         target_node_tree.links.new(uv_socket, pre_node.inputs['UV'])
         for tag in ['U+', 'U-', 'V+', 'V-']:
             target_node_tree.links.new(pre_node.outputs[tag], offset_uv_inputs[tag])
             target_node_tree.links.new(offset_alpha_outputs[tag], post_node.inputs[tag])
         target_node_tree.links.new(output_color_socket, post_node.inputs['Image'])
         target_node_tree.links.new(output_alpha_socket, post_node.inputs['Alpha'])
-        pre_node.inputs['U_Offset'].default_value = self.outline_size[0] / 100.0
-        pre_node.inputs['V_Offset'].default_value = self.outline_size[1] / 100.0
-        post_node.inputs['Color'].default_value = self.outline_color
-        post_node.inputs['Inner'].default_value = float(self.outline_inner)
-        post_node.inputs['Outer'].default_value = float(self.outline_outer)
-        
+        if self.directional:
+            target_node_tree.links.new(output_alpha_socket, post_node.inputs['U-'])
+            target_node_tree.links.new(output_alpha_socket, post_node.inputs['V-'])   
+                
         # Reconnect output sockets
         for link in output_color_links:
             target_node_tree.links.new(post_node.outputs['Image'], link.to_socket)
