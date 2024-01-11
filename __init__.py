@@ -1,7 +1,7 @@
 
 bl_info = {
     "name" : "Texture VFX Control",
-    "author" : "https://github.com/chsh2/",
+    "author" : "https://github.com/chsh2/texture_vfx_control",
     "description" : "Shader-based video playback control and composition VFXs",
     "blender" : (3, 3, 0),
     "version" : (0, 1, 0),

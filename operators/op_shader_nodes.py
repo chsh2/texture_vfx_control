@@ -72,6 +72,8 @@ def duplicate_tex_and_fx_nodes(node_tree, tex_node, node_chain, inside_links):
             offset_nodes[tag].image = tex_node.image
             offset_nodes[tag].projection = tex_node.projection
             offset_nodes[tag].extension = tex_node.extension
+            if offset_nodes[tag].extension == 'CLIP':    # Avoid unwanted borders for outline calculation
+                offset_nodes[tag].extension = 'EXTEND'
             offset_nodes[tag].image_user.frame_duration = tex_node.image_user.frame_duration
             offset_nodes[tag].image_user.frame_start = tex_node.image_user.frame_start
             offset_nodes[tag].image_user.frame_offset = tex_node.image_user.frame_offset
@@ -269,24 +271,30 @@ class OutlineOperator(bpy.types.Operator):
     bl_category = 'View'
     bl_options = {'REGISTER', 'UNDO'}    
 
-    outline_color: bpy.props.FloatVectorProperty(
-            name = "Outline Color",
-            subtype = "COLOR",
-            default = (1.0,1.0,.0,1.0),
-            min = 0.0, max = 1.0, size = 4,
-    )
     outline_size: bpy.props.FloatProperty(
             name = "Size",
             default = 0.5,
-            min = 0, soft_max = 5, step = 1
+            min=0, soft_max=5, step=1
     )
-    outline_outer: bpy.props.BoolProperty(
-            name = "Outer Contour",
-            default = True
+    outline_outer: bpy.props.FloatProperty(
+            name = "Outer Strength",
+            default=0, soft_max=1, min=0
     )
-    outline_inner: bpy.props.BoolProperty(
-            name = "Inner Contour",
-            default = False
+    outline_outer_color: bpy.props.FloatVectorProperty(
+            name = "Outer Color",
+            subtype = "COLOR",
+            default = (1.0,1.0,.0,1.0),
+            min=0.0, max=1.0, size=4,
+    )
+    outline_inner: bpy.props.FloatProperty(
+            name = "Inner Strength",
+            default=1, soft_max=1, min=0
+    )
+    outline_inner_color: bpy.props.FloatVectorProperty(
+            name = "Outer Color",
+            subtype = "COLOR",
+            default = (1.0,1.0,.0,1.0),
+            min=0.0, max=1.0, size=4,
     )
     blur_strength: bpy.props.FloatProperty(
         name='Blur',
@@ -299,12 +307,12 @@ class OutlineOperator(bpy.types.Operator):
     direction: bpy.props.EnumProperty(
             name='Direction',
             items=[('FIXED', 'Fixed Angle', ''),
-                    ('REF', 'Following a Light', '')],
+                    ('REF', 'Reference Object', '')],
             default='FIXED'
     ) 
     angle: bpy.props.FloatProperty(
             name='Angle',
-            default=0.25*math.pi, min=-2*math.pi, max=2*math.pi,
+            default=0.25*math.pi, min=-2*math.pi, max=2*math.pi, step=10,
             unit='ROTATION',
     )
     light_name: bpy.props.StringProperty(
@@ -312,14 +320,21 @@ class OutlineOperator(bpy.types.Operator):
         default='',
         search=lambda self, context, edit_text: [obj.name for obj in context.scene.objects]
     )
+    invert_light: bpy.props.BoolProperty(
+            name='Invert',
+            default = False
+    ) 
                   
     def draw(self, context):
         layout = self.layout
         layout.prop(self, 'outline_color')
         layout.prop(self, 'outline_size')
-        row = layout.row()
-        row.prop(self, 'outline_outer')
-        row.prop(self, 'outline_inner')
+        split = self.layout.split(factor=0.75)
+        split.prop(self, 'outline_outer', slider=True)
+        split.prop(self, 'outline_outer_color', text='')
+        split = self.layout.split(factor=0.75)
+        split.prop(self, 'outline_inner', slider=True)
+        split.prop(self, 'outline_inner_color', text='')
         layout.prop(self, 'blur_strength')
         layout.prop(self, 'directional')
         if self.directional:
@@ -327,9 +342,10 @@ class OutlineOperator(bpy.types.Operator):
             if self.direction == 'FIXED':
                 layout.prop(self, 'angle')
             else:
-                layout.label(text="Light Information:")
+                layout.label(text="Reference Object:")
                 box = layout.box()
-                box.prop(self, 'light_name')
+                box.prop(self, 'light_name', icon='OBJECT_DATA')
+                box.prop(self, 'invert_light')
                     
     def invoke(self, context, event):
         return context.window_manager.invoke_props_dialog(self)
@@ -345,8 +361,6 @@ class OutlineOperator(bpy.types.Operator):
         if not tex_node:
             self.report({"WARNING"}, "Cannot find any eligible texture node to perform the operation.")
             return {'FINISHED'}
-        if tex_node.extension == 'CLIP':
-            tex_node.extension = 'EXTEND'
             
         # Duplicate nodes for edge detection
         node_chain, inside_links, output_color_links, output_alpha_links, \
@@ -383,9 +397,10 @@ class OutlineOperator(bpy.types.Operator):
         post_node = add_node_group(target_node_tree, 'tfx_OutlinePost', 
                                    location=(node_chain[-1].location[0] + 200, 
                                              node_chain[-1].location[1]))
-        post_node.inputs['Color'].default_value = self.outline_color
-        post_node.inputs['Inner'].default_value = float(self.outline_inner)
-        post_node.inputs['Outer'].default_value = float(self.outline_outer)
+        post_node.inputs['Inner Color'].default_value = self.outline_inner_color
+        post_node.inputs['Inner'].default_value = self.outline_inner
+        post_node.inputs['Outer Color'].default_value = self.outline_outer_color
+        post_node.inputs['Outer'].default_value = self.outline_outer
 
         # Set offset values considering different factors
         ratio = tex_node.image.size[0] / tex_node.image.size[1]
@@ -414,21 +429,9 @@ class OutlineOperator(bpy.types.Operator):
                     add_driver_variable(dr.driver, light_obj, f'location[{i}]', 'var', custom_property=False)
                     dr.driver.expression = 'var'
                 # Set light strength
-                light_node.inputs['Scale'].default_value[0] = converted_outline_size[0]
-                light_node.inputs['Scale'].default_value[1] = converted_outline_size[1]
-                
-                # Set light color: disabled for now
-                if False and light_obj.type == 'LIGHT':
-                    light_color_drivers = post_node.inputs['Color'].driver_add('default_value')
-                    for i,dr in enumerate(light_color_drivers):
-                        dr.driver.type = 'SCRIPTED'
-                        if i < 3:
-                            add_driver_variable(dr.driver, light_obj.data, f'color[{i}]', 'var', 
-                                                id_type='LIGHT', custom_property=False)
-                            dr.driver.expression = 'var'
-                        else:
-                            dr.driver.expression = '1.0'                        
-                
+                light_node.inputs['Scale'].default_value[0] = converted_outline_size[0] * (1-self.invert_light*2)
+                light_node.inputs['Scale'].default_value[1] = converted_outline_size[1] * (1-self.invert_light*2)
+    
         # Connect to the FX nodes
         target_node_tree.links.new(uv_socket, pre_node.inputs['UV'])
         for tag in ['U+', 'U-', 'V+', 'V-']:
