@@ -32,7 +32,8 @@ class NODE_MT_add_tfx_submenu(bpy.types.Menu):
 
 def menu_func(self, context):
     layout = self.layout
-    layout.menu("NODE_MT_add_tfx_submenu", icon='SHADERFX')
+    if context.area.ui_type == "ShaderNodeTree" or context.area.type == "VIEW_3D":
+        layout.menu("NODE_MT_add_tfx_submenu", icon='SHADERFX')
 
 def register():
     auto_load.register()
