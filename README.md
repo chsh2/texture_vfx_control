@@ -1,5 +1,7 @@
 # Texture VFX Control: Blender Add-on
 
+[[English]](README.md) | [[中文]](README_zh.md)
+
 This Blender add-on provides with shader-based effects on image/sequence/movie textures. Users can perform video composition directly in the 3D space without using the compositor or the video sequence editor.
 
 The functionalities of this add-on include:
