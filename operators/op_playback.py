@@ -129,8 +129,8 @@ class AddTexturePlaybackDriverOperator(bpy.types.Operator):
                     obj[datapath_playhead] = float(self.playback_reversed ^ pingpong)
                     obj.keyframe_insert(f'["{datapath_playhead}"]')
                     # Set end frame
-                    bpy.context.scene.frame_current += max(1, round( (frame_duration-1.0) / self.playback_rate) )
-                    obj[datapath_playhead] = 1.0 - float(self.playback_reversed ^ pingpong)
+                    bpy.context.scene.frame_current += round(max(1, round( (frame_duration)-1.0) / self.playback_rate) ))
+    )               obj[datapath_playhead] = 1.0 - float(self.playback_reversed ^ pingpong)
                     obj.keyframe_insert(f'["{datapath_playhead}"]')
                     bpy.context.scene.frame_current += 1
                     
