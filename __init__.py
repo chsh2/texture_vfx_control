@@ -1,10 +1,10 @@
 bl_info = {
-    "name" : "(Dev) Texture VFX Control",
+    "name" : "Texture VFX Control",
     "author" : "https://github.com/chsh2/texture_vfx_control",
-    "description" : "Shader-based video playback control and composition VFXs",
+    "description" : "TODO",
     "blender" : (4, 2, 0),
     "version" : (1, 0, 0),
-    "location" : "View3D > Object > Quick Effects, or Shader Editor > Add",
+    "location" : "TODO",
     "warning" : "This addon is still in an early stage of development",
     "doc_url": "",
     "wiki_url": "",
