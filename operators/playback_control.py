@@ -27,7 +27,7 @@ class AddPlaybackDriverOperator(bpy.types.Operator):
         name='Controller',
         items=[ ('LOCAL', 'Local Keyframes', 'Keyframes will be stored in the shader node group that contains the media'),
                 ('GLOBAL', 'Global Manager', 'All keyframes will be stored in an object named "TfxPlaybackManager" as an NLA strip')],
-        default='GLOBAL',
+        default='LOCAL',
         description='Determine to set keyframes inside the material node group itself or inside another object'
     )
     add_keyframes: bpy.props.BoolProperty(
@@ -187,7 +187,7 @@ class AddPlaybackDriverOperator(bpy.types.Operator):
                 if fcurve.data_path == f'["{datapath_playhead}"]':
                     for point in fcurve.keyframe_points:
                         point.interpolation = 'LINEAR'
-            bpy.context.scene.frame_current = frame_current
+            bpy.context.scene.frame_set(frame_current)
         
         # Convert keyframes to NLA strip
         if self.controller == 'GLOBAL':
