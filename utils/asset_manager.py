@@ -22,9 +22,11 @@ template_fx_list = [
         {"name": "Grainy Blur", "file": basic_template_filepath, "node_name": "grainy_blur"},
         {"name": "Sharpen", "file": basic_template_filepath, "node_name": "sharpen"},
         {"name": "Outline", "file": basic_template_filepath, "node_name": "outline"},
+        {"name": "Edge Detection", "file": basic_template_filepath, "node_name": "edge_detection"},
         {"name": "Rim Light / Shadow", "file": basic_template_filepath, "node_name": "rim_light"},]
     },
     {"category": "Distortion", "effects": [
+        {"name": "Wave", "file": basic_template_filepath, "node_name": "wave"},
         {"name": "Fisheye", "file": basic_template_filepath, "node_name": "fisheye"},
         {"name": "Swirl", "file": basic_template_filepath, "node_name": "swirl"},]
     },
@@ -35,12 +37,18 @@ template_fx_list = [
         {"name": "RGB Split", "file": basic_template_filepath, "node_name": "rgb_split"},]
     },
     {"category": "Simulation", "effects": [
-        {"name": "LCD", "file": basic_template_filepath, "node_name": "lcd"},]
+        {"name": "LCD", "file": basic_template_filepath, "node_name": "lcd"},
+        {"name": "Scanline", "file": basic_template_filepath, "node_name": "scanline"},
+        {"name": "Film Grain", "file": basic_template_filepath, "node_name": "film_grain"},
+        {"name": "Glitch", "file": basic_template_filepath, "node_name": "glitch"},]
     },
     {"category": "Transition", "effects": [
         {"name": "Fade", "file": basic_template_filepath, "node_name": "fade"},
+        {"name": "Linear Slide", "file": basic_template_filepath, "node_name": "linear_slide"},
+        {"name": "Linear Wipe", "file": basic_template_filepath, "node_name": "linear_wipe"},
+        {"name": "Clock Wipe", "file": basic_template_filepath, "node_name": "clock_wipe"},
         {"name": "Tile", "file": basic_template_filepath, "node_name": "tile"},
-        {"name": "Clock Wipe", "file": basic_template_filepath, "node_name": "clock_wipe"},]
+        {"name": "Burn", "file": basic_template_filepath, "node_name": "burn"},]
     },
 ]
 
