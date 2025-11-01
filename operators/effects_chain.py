@@ -137,6 +137,57 @@ class SetEffectLocationDriverOperator(bpy.types.Operator):
         
         return {'FINISHED'}
     
+class SetEffectTemporalDriverOperator(bpy.types.Operator):
+    """Set speed of an animated effect by driving it using the scene frame"""
+    bl_idname = "tfx.set_effect_temporal_driver"
+    bl_label = "Set Effect Temporal Driver"
+    bl_category = 'View'
+    bl_options = {'REGISTER', 'UNDO'}
+    
+    node_group_name: bpy.props.StringProperty()
+    param_name: bpy.props.StringProperty()
+    length: bpy.props.IntProperty(
+        name='Length',
+        description='Frame duration of the effect animation',
+        default=10, min=1, soft_max=128
+    )
+    offset: bpy.props.IntProperty(
+        name='Offset',
+        description='Frame offset of the effect animation',
+        default=0, soft_min=-128, soft_max=128
+    )
+
+    def draw(self, context):
+        layout = self.layout
+        hint_text = {
+            'Random Seed': "Frames per Seed:",
+            'Phase': "Frames per Cycle:",
+        }.get(self.param_name, "Frames")
+        row = layout.row()
+        row.label(text=hint_text)
+        row.prop(self, "length", text="")
+        row = layout.row()
+        row.label(text="Frame Offset:")
+        row.prop(self, "offset", text="")
+    
+    def invoke(self, context, event):
+        return context.window_manager.invoke_props_dialog(self)
+
+    def execute(self, context):
+        if self.node_group_name not in bpy.data.node_groups:
+            return {'CANCELLED'}
+        from math import pi
+
+        tree = bpy.data.node_groups[self.node_group_name]
+        rate = 1.0
+        if self.param_name == 'Random Seed':
+            rate = 1.0 / self.length
+        elif self.param_name == 'Phase':
+            rate = 2.0 * pi / self.length
+        anim_utils.set_linear_temporal_driver(tree, self.param_name, rate, self.offset)
+        
+        return {'FINISHED'}
+
 class SetTransitionPlaybackDriverOperator(bpy.types.Operator):
     """Bind a transition effect to the video playhead or an action strip"""
     bl_idname = "tfx.set_transition_playback_driver"

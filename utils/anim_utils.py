@@ -35,6 +35,19 @@ def get_global_location_driver_id(tree):
         return default_str
     return f"Driver: {fc.driver.variables[0].name}"
 
+def set_linear_temporal_driver(tree, param_name, rate, offset):
+    if "TfxParam" not in tree.nodes or "Group Output" not in tree.nodes["TfxParam"].node_tree.nodes:
+        return
+    node = tree.nodes["TfxParam"].node_tree.nodes["Group Output"]
+    if param_name not in node.inputs:
+        return
+    target = node.inputs[param_name]
+    target.driver_remove('default_value')
+    fc = target.driver_add('default_value')
+    fc.driver.type = 'SCRIPTED'
+    add_driver_variable(fc.driver, bpy.context.scene, 'frame_current', 't', id_type='SCENE', custom_property=False)
+    fc.driver.expression = f"{rate}*(t-{offset})"
+
 def set_playhead_driver(tree, length, subject, id_type, datapath_playhead, datapath_duration, out=False):
     if "TfxParam" not in tree.nodes or "Group Output" not in tree.nodes["TfxParam"].node_tree.nodes:
         return
@@ -53,7 +66,7 @@ def set_playhead_driver(tree, length, subject, id_type, datapath_playhead, datap
     add_driver_variable(fc.driver, subject, datapath_playhead, 'p', id_type=id_type)
     add_driver_variable(fc.driver, subject, datapath_duration, 'd', id_type=id_type)
     fc.driver.expression = expr
-    
+
 def set_strip_driver(tree, length, subject, track_name, strip_name, out=False):
     if "TfxParam" not in tree.nodes or "Group Output" not in tree.nodes["TfxParam"].node_tree.nodes:
         return
