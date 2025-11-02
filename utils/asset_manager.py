@@ -2,6 +2,7 @@ import bpy
 import uuid
 import os
 
+default_preset_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../resources/presets')
 basic_template_filepath = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../resources/templates/basic.blend')
 template_fx_list = [
     {"category": "Color", "effects": [
@@ -51,6 +52,10 @@ template_fx_list = [
         {"name": "Burn", "file": basic_template_filepath, "node_name": "burn"},]
     },
 ]
+template_fx_lookup_map = {}
+for cat in template_fx_list:
+    for item in cat["effects"]:
+        template_fx_lookup_map[item["name"]] = {"file": item["file"], "node_name": item["node_name"]}
 
 def create_node_group_instance(template_filepath=None, group_name=''):
     """

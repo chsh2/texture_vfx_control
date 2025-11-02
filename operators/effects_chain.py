@@ -1,4 +1,6 @@
 import bpy
+from bpy_extras.io_utils import ImportHelper, ExportHelper
+import json
 from ..utils import asset_manager, node_utils, anim_utils
 
 """
@@ -267,4 +269,191 @@ class SetTransitionPlaybackDriverOperator(bpy.types.Operator):
                 param_tree, self.length, subject, track_name, strip_name, self.transition_type == 'Out'
             )
                 
+        return {'FINISHED'}
+
+
+
+def generate_json_config():
+    json_output = {"effects": []}
+    chain = node_utils.get_effect_chain_nodes()
+    for i,tree_info in enumerate(chain):
+        if i == 0:
+            continue
+        if "TfxParam" not in tree_info[0].nodes:
+            continue
+        effect_json = {"name": tree_info[1], "parameters": {}, "node_attributes": []}
+
+        params = tree_info[0].nodes["TfxParam"].node_tree.nodes["Group Output"].inputs
+        for param in params:
+            if not param.name:
+                continue
+            effect_json["parameters"][param.name] = {"type": param.type, "value": param.default_value}
+        
+        promoted_params = [] if "tfxPromoted" not in tree_info[0] else tree_info[0]["tfxPromoted"]
+        for p in promoted_params:
+            node = tree_info[0].nodes[p[0]]
+            attr_value = getattr(node, p[1])
+            v = None
+            if isinstance(attr_value, str):
+                v = attr_value
+            elif isinstance(attr_value, bpy.types.ColorRamp):
+                v = {
+                    "elements": [], 
+                    "interpolation": attr_value.interpolation,
+                    "color_mode": attr_value.color_mode,
+                    "hue_interpolation": attr_value.hue_interpolation,
+                }
+                for elem in attr_value.elements:
+                    v["elements"].append({
+                        "position": elem.position,
+                        "color": [elem.color[0], elem.color[1], elem.color[2], elem.color[3]],
+                    })
+            elif isinstance(attr_value, bpy.types.CurveMapping):
+                v = {"curves": []}
+                for curve in attr_value.curves:
+                    curve_data = {"points": []}
+                    for point in curve.points:
+                        curve_data["points"].append({
+                            "location": [point.location[0], point.location[1]],
+                            "handle_type": point.handle_type,
+                        })
+                    v["curves"].append(curve_data)
+            else:
+                continue
+            effect_json["node_attributes"].append({"node": p[0], "attribute": p[1], "value": v})
+
+        json_output["effects"].append(effect_json)
+
+    json_output["effects"].reverse()
+    return json.dumps(json_output, indent=4)
+
+def apply_json_config(json_config):
+    effects = json_config.get("effects", [])
+    for effect in effects:
+        fx = asset_manager.template_fx_lookup_map.get(effect["name"], None)
+        if fx is None:
+            continue
+        node_name, file_name = fx["node_name"], fx["file"]
+        bpy.ops.tfx.push_effect(
+            fx_group_name=f'tfx_effect_{node_name}',
+            param_group_name=f'tfx_param_{node_name}',
+            asset_file_name=file_name
+        )
+
+    chain = node_utils.get_effect_chain_nodes()[:len(effects)+1]
+    for config,tree_info in zip(effects, chain[:0:-1]):
+        tree = tree_info[0]
+        params = tree.nodes["TfxParam"].node_tree.nodes["Group Output"].inputs
+        for param in params:
+            if not param.name:
+                continue
+            if param.name in config["parameters"] and param.type == config["parameters"][param.name]["type"]:
+                param.default_value = config["parameters"][param.name]["value"]
+        
+        for attr in config.get("node_attributes", []):
+            node = tree.nodes[attr["node"]]
+            if not hasattr(node, attr["attribute"]):
+                continue
+            attr_ref = getattr(node, attr["attribute"])
+            v = attr["value"]
+            if isinstance(attr_ref, str):
+                setattr(node, attr["attribute"], v)
+            elif isinstance(attr_ref, bpy.types.ColorRamp):
+                attr_ref.interpolation = v.get("interpolation", 'LINEAR')
+                attr_ref.color_mode = v.get("color_mode", 'RGB')
+                attr_ref.hue_interpolation = v.get("hue_interpolation", 'NEAR')
+                num_elems = len(attr_ref.elements)
+                for e_idx,elem_data in enumerate(v.get("elements", [])):
+                    if e_idx < num_elems:
+                        elem = attr_ref.elements[e_idx]
+                    else:
+                        elem = attr_ref.elements.new(position=elem_data["position"])
+                    elem.position = elem_data["position"]
+                    elem.color = elem_data["color"]
+            elif isinstance(attr_ref, bpy.types.CurveMapping):
+                for curve,curve_data in zip(attr_ref.curves, v.get("curves", [])):
+                    num_points = len(curve.points)
+                    for p_idx,point_data in enumerate(curve_data.get("points", [])):
+                        if p_idx < num_points:
+                            point = curve.points[p_idx]
+                        else:
+                            point = curve.points.new(position=elem_data["location"][0],value=elem_data["location"][1])
+                        point.location = point_data["location"]
+                        point.handle_type = point_data.get("handle_type", 'AUTO')
+
+class CopyEffectsChain(bpy.types.Operator):
+    """Copy the effects chain configuration to clipboard as JSON"""
+    bl_idname = "tfx.copy_effects_chain"
+    bl_label = "Copy Effects Chain"
+    bl_category = 'View'
+    bl_options = {'REGISTER'}
+
+    def execute(self, context):
+        json_config = generate_json_config()
+        context.window_manager.clipboard = json_config
+        self.report({'INFO'}, "Effects chain configuration copied to clipboard.")
+        return {'FINISHED'}
+
+class PasteEffectsChain(bpy.types.Operator):
+    """Add effects according to the JSON configuration from the clipboard"""
+    bl_idname = "tfx.paste_effects_chain"
+    bl_label = "Paste Effects Chain"
+    bl_category = 'View'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    def execute(self, context):
+        json_config = context.window_manager.clipboard
+        try:
+            config = json.loads(json_config)
+        except:
+            self.report({'WARNING'}, "No configurations available in the clipboard.")
+            return {'CANCELLED'}
+        apply_json_config(config)
+        return {'FINISHED'}
+
+class SaveEffectsChain(bpy.types.Operator, ExportHelper):
+    """Save the effects chain configuration to a preset file"""
+    bl_idname = "tfx.save_effects_chain"
+    bl_label = "Copy Effects Chain"
+    bl_category = 'View'
+    bl_options = {'PRESET'}
+
+    filter_glob: bpy.props.StringProperty(
+        default='*.json', 
+        options={'HIDDEN'},
+    )
+    filename_ext='.json'
+
+    def execute(self, context):
+        json_config = generate_json_config()
+        try:
+            with open(self.filepath, 'w') as f:
+                f.write(json_config)
+            self.report({'INFO'}, f"Effects chain configuration saved to {self.filepath}.")
+        except Exception as e:
+            self.report({'WARNING'}, f"Failed to save configuration: {str(e)}")
+            return {'CANCELLED'}
+        return {'FINISHED'}
+
+class LoadEffectsChain(bpy.types.Operator, ImportHelper):
+    """Load effects chain configuration from a preset file"""
+    bl_idname = "tfx.load_effects_chain"
+    bl_label = "Load Effects Chain"
+    bl_category = 'View'
+    bl_options = {'REGISTER', 'UNDO', 'PRESET'}
+
+    filter_glob: bpy.props.StringProperty(
+        default='*.json', 
+        options={'HIDDEN'},
+    )
+    
+    def execute(self, context):
+        try:
+            with open(self.filepath, 'r') as f:
+                json_config = f.read()
+            config = json.loads(json_config)
+        except Exception as e:
+            self.report({'WARNING'}, f"Failed to load configuration: {str(e)}")
+            return {'CANCELLED'}
+        apply_json_config(config)
         return {'FINISHED'}

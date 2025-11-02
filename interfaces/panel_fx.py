@@ -89,6 +89,11 @@ class TFX_PT_panel_fx_chain(bpy.types.Panel):
     def draw(self, context):
         chain = node_utils.get_effect_chain_nodes()
         layout = self.layout
+        row = layout.row()
+        row.operator("tfx.copy_effects_chain", text="Copy", icon='COPYDOWN')
+        row.operator("tfx.paste_effects_chain", text="Paste", icon='PASTEDOWN')
+        row.operator("tfx.save_effects_chain", text="Save", icon='FILE_TICK').filepath = f"{asset_manager.default_preset_dir}/preset.json"
+        row.operator("tfx.load_effects_chain", text="Load", icon='FILE_FOLDER').filepath = f"{asset_manager.default_preset_dir}/preset.json"
 
         for i in range(len(chain)-1, 0, -1):
             tree, fx_name = chain[i]
