@@ -6,6 +6,19 @@ class NewFxMenu(bpy.types.Menu):
     bl_idname = "TFX_MT_new_effect"
     def draw(self, context):
         layout = self.layout
+        layout.menu("TFX_MT_new_effect_by_category")
+        layout.menu("TFX_MT_new_effect_by_name")
+        layout.operator("wm.search_single_menu", text="Search...", icon='VIEWZOOM').menu_idname = "TFX_MT_new_effect_by_name"
+
+        layout.separator(factor=0.5, type="LINE")
+        for cat in asset_manager.template_fx_list:
+            layout.menu(f'TFX_MT_new_effect_by_category_{cat["category"].lower().replace(" ", "_").replace("/", "_")}')
+
+class NewFxByCategorySubMenu(bpy.types.Menu):
+    bl_label = "All (By Category)"
+    bl_idname = "TFX_MT_new_effect_by_category"
+    def draw(self, context):
+        layout = self.layout
         fx_info = asset_manager.template_fx_list
         for cat in fx_info:
             layout.label(text=f'<Category: {cat["category"]}>')
@@ -15,6 +28,50 @@ class NewFxMenu(bpy.types.Menu):
                 op.param_group_name = f'tfx_param_{item["node_name"]}'
                 op.asset_file_name = item["file"]
             layout.separator(factor=0.25, type="LINE")
+
+class NewFxByNameSubMenu(bpy.types.Menu):
+    bl_label = "All (Alphabetical)"
+    bl_idname = "TFX_MT_new_effect_by_name"
+    def draw(self, context):
+        layout = self.layout
+        fx_info = asset_manager.template_fx_list
+        items = [item for cat in fx_info for item in cat["effects"]]
+        items.sort(key=lambda x: x["name"])
+        for item in items:
+            op = layout.operator("tfx.push_effect", text=item["name"])
+            op.fx_group_name = f'tfx_effect_{item["node_name"]}'
+            op.param_group_name = f'tfx_param_{item["node_name"]}'
+            op.asset_file_name = item["file"]
+
+class NewFxCategorySubMenuBase(bpy.types.Menu):
+    bl_label = ""
+    bl_idname = "TFX_MT_new_effect_by_category_base"
+    category_name = ""
+    def draw(self, context):
+        layout = self.layout
+        fx_info = asset_manager.template_fx_list
+        for cat in fx_info:
+            if cat["category"] == self.category_name:
+                for item in cat["effects"]:
+                    op = layout.operator("tfx.push_effect", text=item["name"])
+                    op.fx_group_name = f'tfx_effect_{item["node_name"]}'
+                    op.param_group_name = f'tfx_param_{item["node_name"]}'
+                    op.asset_file_name = item["file"]
+                break
+
+fx_info = asset_manager.template_fx_list
+for cat in fx_info:
+    class_name = f'TFX_MT_new_effect_by_category_{cat["category"].lower().replace(" ", "_").replace("/", "_")}'
+    menu_cls = type(
+        class_name,
+        (NewFxCategorySubMenuBase,),
+        {
+            "bl_label": cat["category"],
+            "bl_idname": class_name,
+            "category_name": cat["category"],
+        }
+    )
+    bpy.utils.register_class(menu_cls)
 
 class TFX_PT_panel_fx_chain(bpy.types.Panel):
     bl_idname = 'TFX_PT_panel_fx_chain'
