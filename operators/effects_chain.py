@@ -287,7 +287,10 @@ def generate_json_config():
         for param in params:
             if not param.name:
                 continue
-            effect_json["parameters"][param.name] = {"type": param.type, "value": param.default_value}
+            effect_json["parameters"][param.name] = {
+                "type": param.type, 
+                "value": tuple(param.default_value) if param.type in {'VECTOR', 'RGBA'} else param.default_value
+            }
         
         promoted_params = [] if "tfxPromoted" not in tree_info[0] else tree_info[0]["tfxPromoted"]
         for p in promoted_params:

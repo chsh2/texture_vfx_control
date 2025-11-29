@@ -35,6 +35,7 @@ template_fx_list = [
         {"name": "Pixelate", "file": basic_template_filepath, "node_name": "pixelate"},
         {"name": "Vignette", "file": basic_template_filepath, "node_name": "vignette"},
         {"name": "Halftone", "file": basic_template_filepath, "node_name": "halftone"},
+        {"name": "Dither", "file": basic_template_filepath, "node_name": "dither"},
         {"name": "RGB Split", "file": basic_template_filepath, "node_name": "rgb_split"},]
     },
     {"category": "Simulation", "effects": [
