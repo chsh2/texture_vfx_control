@@ -380,7 +380,7 @@ def apply_json_config(json_config):
                         if p_idx < num_points:
                             point = curve.points[p_idx]
                         else:
-                            point = curve.points.new(position=elem_data["location"][0],value=elem_data["location"][1])
+                            point = curve.points.new(position=point_data["location"][0],value=point_data["location"][1])
                         point.location = point_data["location"]
                         point.handle_type = point_data.get("handle_type", 'AUTO')
 

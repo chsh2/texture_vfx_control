@@ -95,6 +95,8 @@ class AddPlaybackDriverOperator(bpy.types.Operator):
         self._source = image_node.image.source
         self._frame_duration = media_utils.get_media_duration(image_node.image)
         self._fps = media_utils.get_media_fps(image_node.image)
+        self.first_frame = 1
+        self.last_frame = self._frame_duration
         return context.window_manager.invoke_props_dialog(self, width=300)
     
     def execute(self, context):

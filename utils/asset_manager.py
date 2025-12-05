@@ -17,7 +17,8 @@ template_fx_list = [
     {"category": "Alpha", "effects": [
         {"name": "Chroma Key", "file": basic_template_filepath, "node_name": "chroma_key"},
         {"name": "Alpha Choker", "file": basic_template_filepath, "node_name": "alpha_choker"},
-        {"name": "Alpha Clip", "file": basic_template_filepath, "node_name": "alpha_clip"},]
+        {"name": "Alpha Clip", "file": basic_template_filepath, "node_name": "alpha_clip"},
+        {"name": "Color to Alpha", "file": basic_template_filepath, "node_name": "color_to_alpha"},]
     },
     {"category": "Blur/Enhancement", "effects": [
         {"name": "Grainy Blur", "file": basic_template_filepath, "node_name": "grainy_blur"},
@@ -29,7 +30,9 @@ template_fx_list = [
     {"category": "Distortion", "effects": [
         {"name": "Wave", "file": basic_template_filepath, "node_name": "wave"},
         {"name": "Fisheye", "file": basic_template_filepath, "node_name": "fisheye"},
-        {"name": "Swirl", "file": basic_template_filepath, "node_name": "swirl"},]
+        {"name": "Swirl", "file": basic_template_filepath, "node_name": "swirl"},
+        {"name": "Random Distortion", "file": basic_template_filepath, "node_name": "random_distortion"},
+        {"name": "Shake", "file": basic_template_filepath, "node_name": "shake"},]
     },
     {"category": "Stylization", "effects": [
         {"name": "Pixelate", "file": basic_template_filepath, "node_name": "pixelate"},
