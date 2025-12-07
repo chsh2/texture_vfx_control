@@ -31,7 +31,7 @@ template_fx_list = [
         {"name": "Wave", "file": basic_template_filepath, "node_name": "wave"},
         {"name": "Fisheye", "file": basic_template_filepath, "node_name": "fisheye"},
         {"name": "Swirl", "file": basic_template_filepath, "node_name": "swirl"},
-        {"name": "Random Distortion", "file": basic_template_filepath, "node_name": "random_distortion"},
+        {"name": "Random Deformation", "file": basic_template_filepath, "node_name": "random_deformation"},
         {"name": "Shake", "file": basic_template_filepath, "node_name": "shake"},]
     },
     {"category": "Stylization", "effects": [

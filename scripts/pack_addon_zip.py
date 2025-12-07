@@ -9,6 +9,7 @@ TOP_DIR = "texture_vfx_control"
 EXTRA_IGNORE = [
     "/scripts/",
     "/.git/",
+    "/.github/",
     ".git*",
 ]
 

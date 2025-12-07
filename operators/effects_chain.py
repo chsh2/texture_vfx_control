@@ -151,7 +151,7 @@ class SetEffectTemporalDriverOperator(bpy.types.Operator):
     length: bpy.props.IntProperty(
         name='Length',
         description='Frame duration of the effect animation',
-        default=10, min=1, soft_max=128
+        default=10, soft_min=-128, soft_max=128
     )
     offset: bpy.props.IntProperty(
         name='Offset',
@@ -182,6 +182,8 @@ class SetEffectTemporalDriverOperator(bpy.types.Operator):
 
         tree = bpy.data.node_groups[self.node_group_name]
         rate = 1.0
+        if self.length == 0:
+            self.length = 1
         if self.param_name == 'Random Seed':
             rate = 1.0 / self.length
         elif self.param_name == 'Phase':
