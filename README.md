@@ -53,6 +53,9 @@ In this mode, an object named `TfxPlaybackManager` is created by the add-on, whi
 
 Visual effects can be added to both videos and still images. The button `[Effects Chain] > [New Effect]` at the bottom of the sidebar inserts a new effect to the current media. All existing effects will be displayed in the panel as an effects chain. The user can tune the parameters of each effect, or enable/disable/delete/reorder any effect in the chain.
 
+> [!NOTE]
+> Visual effects are implemented as shader node groups, supported in both EEVEE and Cycles. However, Cycles has a limit on the number of nodes in each shader. Adding too many visual effects to the same media may make it unavailable in Cycles.
+
 #### Drivers
 
 <img src="docs/effects_driver.gif" width=600>
