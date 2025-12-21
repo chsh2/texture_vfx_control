@@ -18,7 +18,7 @@ template_fx_list = [
         {"name": "Chroma Key", "file": basic_template_filepath, "node_name": "chroma_key"},
         {"name": "Alpha Choker", "file": basic_template_filepath, "node_name": "alpha_choker"},
         {"name": "Alpha Clip", "file": basic_template_filepath, "node_name": "alpha_clip"},
-        {"name": "Color to Alpha", "file": basic_template_filepath, "node_name": "color_to_alpha"},]
+        {"name": "Luma Key", "file": basic_template_filepath, "node_name": "luma_key"},]
     },
     {"category": "Blur/Enhancement", "effects": [
         {"name": "Grainy Blur", "file": basic_template_filepath, "node_name": "grainy_blur"},

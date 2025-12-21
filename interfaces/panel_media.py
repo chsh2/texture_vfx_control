@@ -39,6 +39,7 @@ class TFX_PT_panel_media_properties(bpy.types.Panel):
     
     def draw(self, context):
         image_node, _ = node_utils.get_active_image_node()
+        top_node = context.object.active_material.node_tree.nodes.active
         layout = self.layout
         
         layout.operator("tfx.replace_media", icon='FILEBROWSER')
@@ -57,3 +58,7 @@ class TFX_PT_panel_media_properties(bpy.types.Panel):
             row = layout.row()
             row.label(text="Alpha Mode:")
             row.prop(image_node.image, 'alpha_mode', text='')
+            if 'Hide' in top_node.inputs:
+                row = layout.row()
+                row.label(text="Hide:")
+                row.prop(top_node.inputs['Hide'], 'default_value', text='')
