@@ -106,10 +106,15 @@ def get_action_fcurves(action):
     
 def get_global_playback_manager():
     obj_name = "TfxPlaybackManager"
-    if obj_name in bpy.data.objects:
-        return bpy.data.objects[obj_name]
+    key = "tfxPlaybackManager"
+    scene = bpy.context.scene
+
+    if scene.get(key) and scene[key].name in scene.objects:
+        return scene[key]
     else:
         new_obj = bpy.data.objects.new(obj_name, None)
         new_obj.hide_viewport = True
-        bpy.context.scene.collection.objects.link(new_obj)
+        scene.collection.objects.link(new_obj)
+        scene[key] = new_obj
+
         return new_obj

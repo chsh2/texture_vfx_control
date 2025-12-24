@@ -26,7 +26,7 @@ class AddPlaybackDriverOperator(bpy.types.Operator):
     controller: bpy.props.EnumProperty(
         name='Controller',
         items=[ ('LOCAL', 'Local Keyframes', 'Keyframes will be stored in the shader node group that contains the media'),
-                ('GLOBAL', 'Global Manager', 'All keyframes will be stored in an object named "TfxPlaybackManager" as an NLA strip')],
+                ('GLOBAL', 'Global Manager (Beta)', 'All keyframes will be stored in an object named "TfxPlaybackManager" as an NLA strip')],
         default='LOCAL',
         description='Determine to set keyframes inside the material node group itself or inside another object'
     )
@@ -277,8 +277,7 @@ class OpenGlobalManagerWorkspaceOperator(bpy.types.Operator):
             bpy.context.window.workspace = bpy.data.workspaces[workspace_name]
         else:
             bpy.ops.workspace.append_activate(idname=workspace_name, filepath=asset_manager.basic_template_filepath)
-            
-        bpy.context.view_layer.objects.active = anim_utils.get_global_playback_manager()
+
         return {'FINISHED'}
     
 class RefreshDriversOperator(bpy.types.Operator):
