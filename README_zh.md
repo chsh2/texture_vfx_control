@@ -2,59 +2,82 @@
 
 [[English]](README.md) | [[中文]](README_zh.md)
 
-此Blender插件作用于图像序列或视频纹理节点，将一些原本要在合成器或视频编辑器中才能使用的功能实现在着色器的节点组中，以便直接在三维空间中进行影片合成。
+本Blender插件作用于媒体纹理（图片、图片序列和视频），利用节点组和驱动器来实现媒体的播放进度管理和特效管理。用户在三维空间中仍可按照视频编辑/合成软件的习惯进行操作，从而提高动态图形与视频特效的制作效率。
 
-本插件的功能包括：
+本插件的主要功能如下：
 
-- 用关键帧控制视频纹理的播放
-  - 变速/倒放/延时等效果均可实现
-- 视频特效节点组
-  - 模糊
-  - 色键抠像
-  - 描边
-
+- **媒体播放管理**
+  - 视频剪裁/变速/倒放、利用关键帧控制播放进度
+  - 用来排列组织多个视频的管理器界面
+- **视频特效管理**
+  - 一键应用超过30种常见的视频特效/转场
+  - 复数特效的链式管理与非破坏性编辑
+  - 保存特效作为预置、为多个物体批量应用特效
 
 ## 系统需求
 
-Blender 3.3以上（包括Blender 4.0）
+Blender 4.2 ~ 5.0
 
 ## 安装步骤
 
 1. [下载](https://github.com/chsh2/texture_vfx_control/releases)`.zip`压缩包。
 2. 在`[偏好设置] > [插件]`面板中安装并启用本插件。
 
-![](docs/install.png)
+<img src="docs/install.png" width=600>
 
 ## 使用步骤
 
-建议将本插件与Blender自带的[Images as Planes](https://docs.blender.org/manual/en/latest/addons/import_export/images_as_planes.html)插件一同使用。用后者导入图像或视频后，可在菜单`[物体] > [快速效果] > [Texture VFX Control]`中使用本插件的功能。
+如果当前物体的材质包含[图像纹理节点](https://docs.blender.org/manual/en/latest/render/shader_nodes/textures/image.html)，3D视图的侧边栏会出现`TexFX`标签，本插件的功能可在该标签页内使用。通常推荐使用Blender内置的`[添加] > [图像] > [网格平面]`菜单项来导入图片或视频。
 
-![](docs/menu.png)
+要启用插件功能，请点击侧边栏中`[Convert a Texture to FX Node]`按钮，并在下拉菜单中选择图像/视频的名称。操作成功后，侧边栏中将出现更多面板，以供进行后续操作。
 
-此外，本插件也可用于任一含有图像纹理节点的材质。如果该材质含有多个图像纹理，需要在着色器编辑器中选择想要处理的纹理。在着色器编辑器窗口的`[添加]`菜单中也能找到本插件的功能入口。
+### 播放管理
 
-### 播放进度控制
+播放管理功能适用于视频或图片序列，无法对静态图片使用。使用`[Add Playback Controller]`按钮即可为调节视频的播放速度、循环次数等属性。插件支持两种方式来进行视频管理。
 
-![](docs/playback.png)
+#### 关键帧控制
 
-`[Add Texture Playback Driver]`菜单选项将[驱动器](https://docs.blender.org/manual/en/latest/animation/drivers/introduction.html)添加到图像序列/视频的`偏移量`属性上。同时，一个名为`playhead_{{视频文件名}}`的新的自定义属性会出现在`物体属性`面板中。
+<img src="docs/playback_keyframes.gif" width=600>
 
-为这个自定义属性添加关键帧即可控制视频播放。它的取值在0~1之间，分别对应视频的第一帧与最后一帧。除手动添加关键帧外，插件也提供了一些预置选项，如变速播放、倒放、循环播放等。
+此模式下，材质将被添加名为`tfxPlayhead`的关键帧动画通道，该值为0时对应视频播放开始、为1时对应视频播放结束。用户可利用关键帧与曲线实现视频播放进度的精细控制。
 
-**[!局限!]** *视频的偏移量属于材质属性的一部分，因此所有拥有此材质的物体都会显示同一帧视频，而无法设定不同的播放进度。如果想要在多个物体上播放相同的视频，且拥有不同的播放进度，建议用[Images as Planes](https://docs.blender.org/manual/en/latest/addons/import_export/images_as_planes.html)重新导入视频素材，而不是复制已经被导入的物体。*
+#### 全局管理器
 
-### 特效节点组
+<img src="docs/playback_manager.png" width=600>
 
-![](docs/fx.png)
+此模式下，插件会在场景中创建一个名为`TfxPlaybackManager`的物体，集中管理所有视频播放信息。点击`[Open Global Manager]`按钮可进入一个新工作区，用户可以在其中直观地管理多个视频片段。
 
-名为`[Effect: *]`的菜单选项可为图像/视频纹理添加特效。一个纹理可以添加多个特效，这些特效也可以与前面的播放进度控制功能一起使用。
+### 特效管理
 
-如果想要手动连接节点来实现更丰富的效果，`[Append VFX Node Groups]`菜单选项可以将所有插件预置的节点组追加导入到当前的文件中。
+<img src="docs/effects_chain.gif" width=600>
 
-**[!局限!]** *描边节点的设置较为复杂，且必须将纹理节点复制4份以实现边缘检测。如果要将该节点与本插件以外的节点组混合使用，请务必注意节点的连接方式与顺序是否正确。*
+特效管理功能既适用于视频，也适用于静态图片。使用侧边栏最下方`[Effects Chain] > [New Effect]`按钮为媒体插入一个新特效。该面板将显示出目前已经应用在当前媒体上的所有特效，用户可以调节特效的参数，或者关闭/启用/删除任一特效。
+
+> [!NOTE]
+> 特效由节点组实现，在EEVEE与Cycles引擎中均可使用。然而，Cycles对每个着色器的节点总数有所限制，如果为同一个媒体插入过多特效，Cycles可能无法正常显示该材质。
+
+#### 驱动器
+
+<img src="docs/effects_driver.gif" width=600>
+
+部分特效参数的数值旁边显示有图标，插件为这些参数设计了驱动器，以快速实现某些视觉效果。典型的驱动器包括：
+
+- **位置驱动**: 与另一个指定物体的相对位置会影响该参数的值。例如投影效果可以通过指定作为光源的物体来自动决定阴影的方向。
+- **时间驱动**: 对于动态的视觉效果，设置该驱动器可以让参数的值随视频的帧数自动增长，因此不需要手动设置关键帧即可实现动画。
+- **渐入/渐出**: 对于过渡特效，如果媒体已经使用了上面介绍的的播放管理功能，可以将特效的渐入/渐出属性绑定到控制视频播放的关键帧通道上，因此不需要再单独手动设置特效的关键帧。
+
+#### 保存预置
+
+特效管理面板提供了一系列按钮用于特效的导入/导出。一个媒体的完整特效链可以作为JSON预置文件被保存到文件中，也可以直接复制到其它的媒体上。
 
 ## 参考与致谢
 
-The method of Chroma Key comes from [OBS Studio](https://obsproject.com/). Its implementation also refers to a [Godot shader](https://godotshaders.com/shader/green-screen-chromakey/) made by [BlueMoon_Coder](https://godotshaders.com/author/bluemoon_coder/).
+特效节点组的实现参考了以下代码：
+- https://github.com/obsproject/obs-studio/blob/master/plugins/obs-filters/data/chroma_key_filter.effect
+- https://godotshaders.com/shader/green-screen-chromakey/
+- https://www.shadertoy.com/view/7sscD4
+- https://www.shadertoy.com/view/4s2GRR
 
-The example video used in this document is from [Pixabay](https://pixabay.com/videos/cat-pet-green-screen-green-nature-116648/) made by BoVibol.
+功能演示中使用了以下素材：
+- https://pixabay.com/videos/cat-pet-green-screen-green-nature-116648/
+- [Big Buck Bunny](https://peach.blender.org/)

@@ -2,59 +2,82 @@
 
 [[English]](README.md) | [[中文]](README_zh.md)
 
-This Blender add-on provides with shader-based effects on image/sequence/movie textures. Users can perform video composition directly in the 3D space without using the compositor or the video sequence editor.
+Texture VFX Control is a Blender add-on working on media (videos, images and image sequences) as textures, enabling management of media playback progress and visual effects. The users can have the video editing/composition workflow in the 3D space, therefore facilitating the creation of motion graphics and reels.
 
-The functionalities of this add-on include:
+Main features:
 
-- Texture Playback Control
-  - Speedup/slowdown/offset/reverse of sequence/movie textures controlled by keyframes
-- VFX Shaders
-  - Blur
-  - Chroma Key
-  - Outline
-
+- **Media Playback Control**
+  - Cropping, speed adjustment and reverse playback controlled by keyframes
+  - A workspace for arranging multiple video clips
+- **Effects Chain Control**
+  - Quick application of over 30 popular video effects
+  - Non-destructive editing of multiple effects as a chain
+  - Save effects as presets and transfer them between objects
 
 ## Requirements
 
-Blender 3.3+ or Blender 4.0
+Blender 4.2 - 5.0
 
 ## Installation
 
 1. Download the `.zip` archive from the [Releases](https://github.com/chsh2/texture_vfx_control/releases) page.
 2. Install and enable the add-on from `[Preferences] > [Add-ons]` panel.
 
-![](docs/install.png)
+<img src="docs/install.png" width=600>
 
 ## Usage
 
-It is recommended to use this add-on's operators on images/sequences/movies imported through [Images as Planes](https://docs.blender.org/manual/en/latest/addons/import_export/images_as_planes.html). Select the imported object, and access the add-on through `[Object] > [Quick Effects] > [Texture VFX Control]`.
+The add-on can be called from the sidebar of the 3D viewport. A tab named `TexFX` will appear in the sidebar when the active object material contains at least one [Image Texture Node](https://docs.blender.org/manual/en/latest/render/shader_nodes/textures/image.html). The most common way to import media files as textures is through the menu item `[Add] > [Image] > [Mesh Plane]`.
 
-![](docs/menu.png)
+To enable the add-on, click the `[Convert a Texture to FX Node]` button and select the name of the media. After the operation is successful, more panels will appear in the sidebar for subsequent actions.
 
-The add-on can also work with any material containing a [Image Texture](https://docs.blender.org/manual/en/latest/render/shader_nodes/textures/image.html) shader node. If the active material contains more than one image texture, please select one of them in the Shader Editor. The same menu can be found in the Shader Editor `[Add] > [Texture VFX Control]`.
+### Video Playback Control
 
-### Playback Control Driver
+The playback control can be added to a video or an image sequence through the `[Add Playback Controller]` button. The user can specify the playing speed and the number of loops. There are two modes for video playback management.
 
-![](docs/playback.png)
+#### Local Keyframes
 
-By executing `[Add Texture Playback Driver]`, a [driver](https://docs.blender.org/manual/en/latest/animation/drivers/introduction.html) will be added to the `Offset` attribute of the video texture. At the same time, a custom property named `playhead_{{video's name}}` can be found in the `Object Properties` panel.
+<img src="docs/playback_keyframes.gif" width=600>
 
-The playback of the video can be controlled by keyframes of the `playhead` property. A value of 0 shows the first frame of the video and a value of 1 shows the last frame. In this way, different effects can be achieved such as offset, speed changes and reverse play.
+In this mode, a new keyframe channel `tfxPlayhead` is added to the active material, which is also visible in the add-on panel. When this property value is 0, it corresponds to the start of video playback; when it is 1, it corresponds to the end of video playback. The user can make fine-grained control of the video playback through keyframes and F-Curves.
 
-**[Limitations]** *The frame offset is an attribute of the material. Therefore, all objects with this material will always show the same frame of the video. If you want to show different frames of the same video in multiple objects, you may need to import the video through [Images as Planes](https://docs.blender.org/manual/en/latest/addons/import_export/images_as_planes.html) again, rather than duplicate the object.*
+#### Global Manager
 
-### VFX Shader Node Groups
+<img src="docs/playback_manager.png" width=600>
 
-![](docs/fx.png)
+In this mode, an object named `TfxPlaybackManager` is created by the add-on, which stores the animation data of all media in a centralized manner. By clicking the `[Open Global Manager]` button, the add-on creates a new workspace, where the user can manage multiple media as action strips in an NLA editor.
 
-Menu items `[Effect: *]` adds some common VFXs to the image/movie texture. Multiple effects can be used together. They can also work with the playback driver.
+### Visual Effects Control
 
-You can also manually set up the VFX shader nodes to achieve more variants of these effects. `[Append VFX Node Groups]` will append all preset node groups from this add-on to the current file.
+<img src="docs/effects_chain.gif" width=600>
 
-**[Limitations]** *The outline shader has a complicated setup, including creating 4 new copies of the texture nodes. Please pay attention to the sequence of nodes if you would like to use it along with other shader node groups which are not from this add-on.*
+Visual effects can be added to both videos and still images. The button `[Effects Chain] > [New Effect]` at the bottom of the sidebar inserts a new effect to the current media. All existing effects will be displayed in the panel as an effects chain. The user can tune the parameters of each effect, or enable/disable/delete/reorder any effect in the chain.
+
+> [!NOTE]
+> Visual effects are implemented as shader node groups, supported in both EEVEE and Cycles. However, Cycles has a limit on the number of nodes in each shader. Adding too many visual effects to the same media may make it unavailable in Cycles.
+
+#### Drivers
+
+<img src="docs/effects_driver.gif" width=600>
+
+Certain effect parameters have an icon button on the side, which adds drivers to the parameter in order to create animations. There are different types of drivers:
+
+- **Location Driver**: The parameter value is determined by the relative location to another object. For example, the user can assign an object as the light source to decide the angle of the drop shadow effect.
+- **Temporal Driver**: The parameter value increases with the frame number, so that an animation will be created.
+- **Transition In/Out**: For videos with the playback control set up, the transition effects can be bound to the playback control, so that the user does not need to create keyframes manually. 
+
+#### Save/Load Presets
+
+The buttons at the top of the Effects Chain panel allow the user to save the current effects chain as a preset, either to a JSON file or to the clipboard. This preset can then be loaded/pasted to apply the same effects to another object.
 
 ## Credits
 
-The method of Chroma Key comes from [OBS Studio](https://obsproject.com/). Its implementation also refers to a [Godot shader](https://godotshaders.com/shader/green-screen-chromakey/) made by [BlueMoon_Coder](https://godotshaders.com/author/bluemoon_coder/).
+The shader node groups in this add-on have the following references:
+- https://github.com/obsproject/obs-studio/blob/master/plugins/obs-filters/data/chroma_key_filter.effect
+- https://godotshaders.com/shader/green-screen-chromakey/
+- https://www.shadertoy.com/view/7sscD4
+- https://www.shadertoy.com/view/4s2GRR
 
-The example video used in this document is from [Pixabay](https://pixabay.com/videos/cat-pet-green-screen-green-nature-116648/) made by BoVibol.
+The following assets are used for demonstration purposes in the documentation:
+- https://pixabay.com/videos/cat-pet-green-screen-green-nature-116648/
+- [Big Buck Bunny](https://peach.blender.org/)
