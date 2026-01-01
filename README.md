@@ -2,6 +2,8 @@
 
 [[English]](README.md) | [[中文]](README_zh.md)
 
+[[Video Demo](https://youtu.be/jcMXFulEM1k)]
+
 Texture VFX Control is a Blender add-on working on media (videos, images and image sequences) as textures, enabling management of media playback progress and visual effects. The users can have the video editing/composition workflow in the 3D space, therefore facilitating the creation of motion graphics and reels.
 
 Main features:
