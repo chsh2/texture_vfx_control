@@ -14,16 +14,16 @@ def list_tfx_node_groups(material):
     
     group_nodes = [node for node in node_tree.nodes if node.type == 'GROUP' and node.node_tree]
     for group_node in group_nodes:
-            target_image = None
-            if "TfxMedia" in group_node.node_tree.nodes:
-                target_image = group_node.node_tree.nodes["TfxMedia"].image
-            elif "TfxRoot" in group_node.node_tree.nodes:
-                inner_node_tree = group_node.node_tree.nodes["TfxRoot"].node_tree
-                target_image = inner_node_tree.nodes["TfxMedia"].image
-            if target_image:
-                tex_groups_map[target_image.name].append(group_node)
-                if group_node == node_tree.nodes.active:
-                    active_tex_name = target_image.name
+        target_image = None
+        if "TfxMedia" in group_node.node_tree.nodes:
+            target_image = group_node.node_tree.nodes["TfxMedia"].image
+        elif "TfxRoot" in group_node.node_tree.nodes:
+            inner_node_tree = group_node.node_tree.nodes["TfxRoot"].node_tree
+            target_image = inner_node_tree.nodes["TfxMedia"].image
+        if target_image:
+            tex_groups_map[target_image.name].append(group_node)
+            if group_node == node_tree.nodes.active:
+                active_tex_name = target_image.name
                     
     return tex_groups_map, active_tex_name
 

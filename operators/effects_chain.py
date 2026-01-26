@@ -21,7 +21,7 @@ class PushEffectOperator(bpy.types.Operator):
     bl_idname = "tfx.push_effect"
     bl_label = "New Effect"
     bl_category = 'View'
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
     
     fx_group_name: bpy.props.StringProperty(default='')
     param_group_name: bpy.props.StringProperty(default='')
@@ -52,7 +52,7 @@ class PopEffectOperator(bpy.types.Operator):
     bl_idname = "tfx.pop_effect"
     bl_label = "Remove Effect"
     bl_category = 'View'
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     depth: bpy.props.IntProperty()
 
@@ -74,7 +74,7 @@ class SwapEffectOperator(bpy.types.Operator):
     bl_idname = "tfx.swap_effect"
     bl_label = "Swap Effect"
     bl_category = 'View'
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     depth: bpy.props.IntProperty() # Swap effects at depth and depth+1
 
@@ -108,7 +108,7 @@ class SetEffectLocationDriverOperator(bpy.types.Operator):
     bl_idname = "tfx.set_effect_location_driver"
     bl_label = "Set Effect Location Driver"
     bl_category = 'View'
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
     
     obj_name: bpy.props.StringProperty(
         name='Object',
@@ -144,7 +144,7 @@ class SetEffectTemporalDriverOperator(bpy.types.Operator):
     bl_idname = "tfx.set_effect_temporal_driver"
     bl_label = "Set Effect Temporal Driver"
     bl_category = 'View'
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
     
     node_group_name: bpy.props.StringProperty()
     param_name: bpy.props.StringProperty()
@@ -197,7 +197,7 @@ class SetTransitionPlaybackDriverOperator(bpy.types.Operator):
     bl_idname = "tfx.set_transition_playback_driver"
     bl_label = "Set Transition Playback Driver"
     bl_category = 'View'
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
     
     node_group_name: bpy.props.StringProperty()
     bind_to: bpy.props.EnumProperty(
