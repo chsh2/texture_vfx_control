@@ -13,11 +13,14 @@ bl_info = {
 
 import bpy
 from . import auto_load
+from .interfaces import panel_nla
 
 auto_load.init()
 
 def register():
     auto_load.register()
+    bpy.types.NLA_HT_header.prepend(panel_nla.draw_nla_header)
     
 def unregister():
+    bpy.types.NLA_HT_header.remove(panel_nla.draw_nla_header)
     auto_load.unregister()

@@ -26,7 +26,8 @@ def get_media_duration(image):
         
     elif image.source == 'MOVIE':
         return image.frame_duration
-    return 1
+    # Set 1 second as default duration of still images
+    return round(bpy.context.scene.render.fps / bpy.context.scene.render.fps_base)
 
 def get_media_fps(image):
     scene_fps = bpy.context.scene.render.fps

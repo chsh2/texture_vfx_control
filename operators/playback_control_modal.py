@@ -1,0 +1,274 @@
+import bpy
+from ..utils import anim_utils, media_utils
+
+_is_playback_manager_modal_running = False
+def is_modal_running():
+    global _is_playback_manager_modal_running
+    return _is_playback_manager_modal_running
+
+def protect_nla_tracks():
+    subject = anim_utils.get_global_playback_manager()
+    if is_modal_running() or subject.animation_data is None:
+        return
+    for track in subject.animation_data.nla_tracks:
+        track.lock = True
+
+class StripState:
+    def __init__(self, strip, hide_before=False, hide_after=False):
+        self.strip = strip
+        self.frame_start = strip.frame_start
+        self.frame_end = strip.frame_end
+        self.hide_before = hide_before
+        self.hide_after = hide_after
+        self.scale = strip.scale
+        self.select = strip.select
+
+def select_objects_by_strips(context):
+    if context.selected_nla_strips is None:
+        return
+    for obj in context.selected_objects:
+        obj.select_set(False)
+    objs = [o for o in context.scene.objects if o.type == 'MESH' and o.data]
+    media_node_groups = set()
+    for strip in context.selected_nla_strips:
+        if strip.action and "tfxMediaNodeGroup" in strip.action:
+            media_node_groups.add(strip.action["tfxMediaNodeGroup"].name)
+    for obj in objs:
+        for mat in obj.data.materials:
+            if mat.node_tree:
+                group_nodes = [node for node in mat.node_tree.nodes if node.type == 'GROUP' and node.node_tree]
+                for group_node in group_nodes:
+                    if 'TfxRoot' in group_node.node_tree.nodes:
+                        inner_node_tree = group_node.node_tree.nodes['TfxRoot'].node_tree
+                        if inner_node_tree.name in media_node_groups:
+                            obj.select_set(True)
+                            context.view_layer.objects.active = obj
+                            break
+
+def set_strip_visibility(strip_state):
+    strip = strip_state.strip
+    subjects = []
+    if strip.action and "tfxMediaNodeGroup" in strip.action:
+        for mat in bpy.data.materials:
+            if mat.node_tree:
+                group_nodes = [node for node in mat.node_tree.nodes if node.type == 'GROUP' and node.node_tree]
+                for group_node in group_nodes:
+                    if 'TfxRoot' in group_node.node_tree.nodes:
+                        inner_node_tree = group_node.node_tree.nodes['TfxRoot'].node_tree
+                        if inner_node_tree.name == strip.action["tfxMediaNodeGroup"].name:
+                            subjects.append((mat.node_tree, group_node))
+    for subject, group_node in subjects:
+        datapath = f'nodes["{group_node.name}"].inputs[1].default_value'
+        if subject.animation_data and subject.animation_data.action:
+            fcurves = anim_utils.get_action_fcurves(subject.animation_data.action)
+            fc = fcurves.find(datapath)
+            if fc:
+                fcurves.remove(fc)
+        frame_current = bpy.context.scene.frame_current
+        if strip_state.hide_before:
+            bpy.context.scene.frame_set(int(strip_state.frame_start - 1))
+            group_node.inputs[1].default_value = True
+            subject.keyframe_insert(datapath)
+            bpy.context.scene.frame_set(int(strip_state.frame_start))
+            group_node.inputs[1].default_value = False
+            subject.keyframe_insert(datapath)
+        if strip_state.hide_after:
+            bpy.context.scene.frame_set(int(strip_state.frame_end))
+            group_node.inputs[1].default_value = False
+            subject.keyframe_insert(datapath)
+            bpy.context.scene.frame_set(int(strip_state.frame_end + 1))
+            group_node.inputs[1].default_value = True
+            subject.keyframe_insert(datapath)
+        bpy.context.scene.frame_set(frame_current)
+
+def trim_strip(strip, trim_type, frame_delta):
+    if strip.action is None or "tfxMediaNodeGroup" not in strip.action:
+        return False
+
+    if trim_type == 2:
+        frame_delta = max(frame_delta, strip.frame_start - strip.frame_end + 1)
+    if trim_type == 1:
+        frame_delta = min(frame_delta, strip.frame_end - strip.frame_start - 1)
+
+    if abs(strip.repeat - 1.0) > 1e-6:
+        if trim_type == 2:
+            strip.repeat += frame_delta / (strip.frame_end - strip.frame_start) * strip.repeat
+        return True
+
+    if abs(strip.action_frame_end - strip.action.frame_range[1]) + abs(strip.action_frame_start - strip.action.frame_range[0]) > 1e-6:
+        return False
+
+    media_node_group = strip.action["tfxMediaNodeGroup"]
+    media_ub = media_utils.get_media_duration(media_node_group.nodes['TfxMedia'].image)
+    suffix = media_node_group.name.split('_')[-1]
+    manager = anim_utils.get_global_playback_manager()
+    fcurves = anim_utils.get_action_fcurves(strip.action)
+    fc = fcurves.find(f'["tfxPlayhead_{suffix}"]')
+
+    if len(fc.keyframe_points) != 2 or strip.use_reverse:
+        return False
+
+    frame_delta = round(frame_delta / strip.scale) * strip.scale
+    if trim_type == 2:
+        current_ub = manager[f'tfxFirstFrame_{suffix}'] + manager[f'tfxFrameDuration_{suffix}'] - 1
+        frame_delta = min(frame_delta, (media_ub - current_ub) * strip.scale)
+        strip.frame_end += frame_delta
+        manager[f'tfxFrameDuration_{suffix}'] += int(frame_delta / strip.scale)
+    if trim_type == 1:
+        current_lb = manager[f'tfxFirstFrame_{suffix}']
+        frame_delta = max(frame_delta, (1 - current_lb) * strip.scale)
+        strip.frame_start += frame_delta
+        manager[f'tfxFirstFrame_{suffix}'] += int(frame_delta / strip.scale)
+        manager[f'tfxFrameDuration_{suffix}'] -= int(frame_delta / strip.scale)
+    fc.keyframe_points[-1].co.x = fc.keyframe_points[0].co.x + manager[f'tfxFrameDuration_{suffix}'] - 1
+    fc.update()
+    strip.action_frame_end = strip.action.frame_range[1]
+    return True
+
+class PlaybackManagerModalOperator(bpy.types.Operator):
+    """Custom UI for editing multiple video strips in the NLA editor"""
+    bl_idname = "tfx.playback_manager_modal"
+    bl_label = "Playback Manager Modal"
+    bl_category = 'View'
+    bl_options = {'REGISTER', 'INTERNAL'}
+
+    _area = None
+    _workspace = None
+    _dragging_type = 0
+    _trim_mode = False
+    _dragging_mode = False
+    _dragging_start_frame = -1
+    _dragging_end_frame = -1
+    _strips_state = {}
+
+    def update_state(self, context):
+        new_state = {}
+        selection_changed = False
+        state_changed = []
+
+        subject = anim_utils.get_global_playback_manager()
+        if subject.animation_data is None:
+            return selection_changed, state_changed
+        for track in subject.animation_data.nla_tracks:
+            to_purge = []
+            # For now, only one strip is allows for one media node group
+            for i,strip in enumerate(track.strips):
+                if strip.action is None or "tfxMediaNodeGroup" not in strip.action:
+                    to_purge.append(strip)
+                    continue
+                node_group = strip.action["tfxMediaNodeGroup"]
+                if node_group.name in new_state:
+                    to_purge.append(strip)
+                    continue
+                new_state[node_group.name] = StripState(
+                    strip,
+                    hide_before=strip.action.get("tfxHideBefore", False),
+                    hide_after=strip.action.get("tfxHideAfter", False)
+                )
+
+            for strip in to_purge:
+                track.strips.remove(strip)
+        
+        for key, strip_state in new_state.items():
+            if key not in self._strips_state:
+                state_changed.append(key)
+            else:
+                if (self._strips_state[key].frame_start != strip_state.frame_start or
+                    self._strips_state[key].frame_end != strip_state.frame_end or
+                    self._strips_state[key].hide_before != strip_state.hide_before or
+                    self._strips_state[key].hide_after != strip_state.hide_after or
+                    self._strips_state[key].scale != strip_state.scale):
+                    state_changed.append(key)
+                if self._strips_state[key].select != strip_state.select:
+                    selection_changed = True
+
+        self._strips_state = new_state
+        return selection_changed, state_changed
+
+    def cleanup(self):
+        global _is_playback_manager_modal_running
+        _is_playback_manager_modal_running = False
+        protect_nla_tracks()
+        return {'CANCELLED'}
+
+    def invoke(self, context, event):
+        global _is_playback_manager_modal_running
+        if _is_playback_manager_modal_running:
+            return self.cleanup()
+
+        self._workspace = context.workspace
+        self._scene = context.scene
+
+        context.window_manager.modal_handler_add(self)
+        _is_playback_manager_modal_running = True
+        _, state_changed = self.update_state(context)
+        for key in state_changed:
+            set_strip_visibility(self._strips_state[key])
+
+        subject = anim_utils.get_global_playback_manager()
+        if subject.animation_data:
+            for track in subject.animation_data.nla_tracks:
+                track.lock = False
+
+        return {'RUNNING_MODAL'}
+
+    def modal(self, context, event):
+        global _is_playback_manager_modal_running
+        if not _is_playback_manager_modal_running or context.window.workspace != self._workspace or context.scene != self._scene:
+            return self.cleanup()
+
+        if context.area is None or context.area.type != 'NLA_EDITOR':
+            return {'PASS_THROUGH'}
+
+        if event.type == 'LEFTMOUSE' and event.value == 'PRESS':
+            v2d = context.region.view2d
+            self._dragging_type = 0
+            dragging_handler_size = 6
+            for strip in context.selected_nla_strips:
+                x1 = v2d.view_to_region(strip.frame_start, 0, clip=False)[0]
+                x2 = v2d.view_to_region(strip.frame_end, 0, clip=False)[0]
+                if abs(event.mouse_region_x - x2) < dragging_handler_size:
+                    self._dragging_start_frame = strip.frame_end
+                    self._dragging_type = 2
+                    break
+                elif abs(event.mouse_region_x - x1) < dragging_handler_size:
+                    self._dragging_start_frame = strip.frame_start
+                    self._dragging_type = 1
+                    break
+            
+        refresh_needed = False
+        if event.type == 'LEFTMOUSE' and event.value == 'CLICK_DRAG':
+            if self._dragging_type != 0:
+                self._trim_mode = True
+                context.window.cursor_set('KNIFE')
+                return {'RUNNING_MODAL'}
+            else:
+                self._dragging_mode = True
+                
+        if self._trim_mode and event.type == 'LEFTMOUSE' and event.value == 'RELEASE':
+            self._trim_mode = False
+            context.window.cursor_set('DEFAULT')
+            v2d = context.region.view2d
+            self._dragging_end_frame = v2d.region_to_view(event.mouse_region_x, 0)[0]
+            frame_delta = self._dragging_end_frame - self._dragging_start_frame
+            trim_succeeded = True
+            for strip in context.selected_nla_strips:
+                trim_succeeded = trim_succeeded and trim_strip(strip, self._dragging_type, frame_delta)
+            if not trim_succeeded:
+                self.report({'INFO'}, "Trimming does not work on reversed or extended clips.")
+
+        if self._dragging_mode and event.type == 'MOUSEMOVE':
+            self._dragging_mode = False
+            refresh_needed = True
+
+        if event.type in ('LEFTMOUSE', 'RET', 'TAB') and event.value == 'RELEASE':
+            refresh_needed = True
+
+        if refresh_needed:
+            selection_changed, state_changed = self.update_state(context)
+            if selection_changed:
+                select_objects_by_strips(context)
+            for key in state_changed:
+                set_strip_visibility(self._strips_state[key])
+
+        return {'PASS_THROUGH'}
