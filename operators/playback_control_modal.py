@@ -13,6 +13,11 @@ def protect_nla_tracks():
     for track in subject.animation_data.nla_tracks:
         track.lock = True
 
+class StripMode:
+    LOOP = 1
+    EXTEND = 2
+    PINGPONG = 3
+
 class StripState:
     def __init__(self, strip, hide_before=False, hide_after=False):
         self.strip = strip
@@ -34,7 +39,8 @@ def select_objects_by_strips(context):
         if strip.action and "tfxMediaNodeGroup" in strip.action:
             media_node_groups.add(strip.action["tfxMediaNodeGroup"].name)
     for obj in objs:
-        for mat in obj.data.materials:
+        all_mat = list(obj.data.materials) + [slot.material for slot in obj.material_slots if slot.material]
+        for mat in all_mat:
             if mat.node_tree:
                 group_nodes = [node for node in mat.node_tree.nodes if node.type == 'GROUP' and node.node_tree]
                 for group_node in group_nodes:
@@ -81,21 +87,20 @@ def set_strip_visibility(strip_state):
             subject.keyframe_insert(datapath)
         bpy.context.scene.frame_set(frame_current)
 
+def get_strip_flags(strip, fc):
+    flags = set()
+    if strip.action is None or "tfxMediaNodeGroup" not in strip.action:
+        return flags
+    if abs(strip.repeat - 1.0) > 1e-6:
+        flags.add(StripMode.LOOP)
+    if abs(strip.action_frame_end - strip.action.frame_range[1]) + abs(strip.action_frame_start - strip.action.frame_range[0]) > 1e-6:
+        flags.add(StripMode.EXTEND)
+    if len(fc.keyframe_points) != 2:
+        flags.add(StripMode.PINGPONG)
+    return flags
+
 def trim_strip(strip, trim_type, frame_delta):
     if strip.action is None or "tfxMediaNodeGroup" not in strip.action:
-        return False
-
-    if trim_type == 2:
-        frame_delta = max(frame_delta, strip.frame_start - strip.frame_end + 1)
-    if trim_type == 1:
-        frame_delta = min(frame_delta, strip.frame_end - strip.frame_start - 1)
-
-    if abs(strip.repeat - 1.0) > 1e-6:
-        if trim_type == 2:
-            strip.repeat += frame_delta / (strip.frame_end - strip.frame_start) * strip.repeat
-        return True
-
-    if abs(strip.action_frame_end - strip.action.frame_range[1]) + abs(strip.action_frame_start - strip.action.frame_range[0]) > 1e-6:
         return False
 
     media_node_group = strip.action["tfxMediaNodeGroup"]
@@ -104,25 +109,55 @@ def trim_strip(strip, trim_type, frame_delta):
     manager = anim_utils.get_global_playback_manager()
     fcurves = anim_utils.get_action_fcurves(strip.action)
     fc = fcurves.find(f'["tfxPlayhead_{suffix}"]')
+    flags = get_strip_flags(strip, fc)
 
-    if len(fc.keyframe_points) != 2 or strip.use_reverse:
-        return False
+    if StripMode.EXTEND in flags:
+        if trim_type == 2:
+            if not strip.use_reverse:
+                strip.action_frame_end += frame_delta / strip.scale
+            else:
+                strip.action_frame_start -= frame_delta / strip.scale
+        if trim_type == 1:
+            if not strip.use_reverse:
+                strip.action_frame_start += frame_delta / strip.scale
+            else:
+                strip.action_frame_end -= frame_delta / strip.scale
+            strip.action_frame_end = max(strip.action_frame_end, strip.action_frame_start + 1)
+            strip.frame_start += frame_delta
+            strip.frame_end += frame_delta
+        return True
+    
+    if StripMode.LOOP in flags or StripMode.PINGPONG in flags:
+        if trim_type == 2:
+            strip.repeat += frame_delta / (strip.frame_end - strip.frame_start) * strip.repeat
+            strip.repeat = max(0.1, strip.repeat)
+        return True
 
-    frame_delta = round(frame_delta / strip.scale) * strip.scale
     if trim_type == 2:
+        frame_delta = max(frame_delta, strip.frame_start - strip.frame_end + 1)
+    if trim_type == 1:
+        frame_delta = min(frame_delta, strip.frame_end - strip.frame_start - 1)
+    frame_delta = round(frame_delta / strip.scale) * strip.scale
+    if strip.use_reverse:
+        frame_delta = -frame_delta
+    if (trim_type == 2 and not strip.use_reverse) or (trim_type == 1 and strip.use_reverse):
         current_ub = manager[f'tfxFirstFrame_{suffix}'] + manager[f'tfxFrameDuration_{suffix}'] - 1
         frame_delta = min(frame_delta, (media_ub - current_ub) * strip.scale)
-        strip.frame_end += frame_delta
         manager[f'tfxFrameDuration_{suffix}'] += int(frame_delta / strip.scale)
-    if trim_type == 1:
+    if (trim_type == 1 and not strip.use_reverse) or (trim_type == 2 and strip.use_reverse):
         current_lb = manager[f'tfxFirstFrame_{suffix}']
         frame_delta = max(frame_delta, (1 - current_lb) * strip.scale)
-        strip.frame_start += frame_delta
         manager[f'tfxFirstFrame_{suffix}'] += int(frame_delta / strip.scale)
-        manager[f'tfxFrameDuration_{suffix}'] -= int(frame_delta / strip.scale)
+        manager[f'tfxFrameDuration_{suffix}'] -= int(frame_delta / strip.scale)  
+
     fc.keyframe_points[-1].co.x = fc.keyframe_points[0].co.x + manager[f'tfxFrameDuration_{suffix}'] - 1
     fc.update()
     strip.action_frame_end = strip.action.frame_range[1]
+    if strip.use_reverse:
+        frame_delta = -frame_delta
+    if trim_type == 1:
+        strip.frame_start += frame_delta
+        strip.frame_end += frame_delta
     return True
 
 class PlaybackManagerModalOperator(bpy.types.Operator):
@@ -144,7 +179,7 @@ class PlaybackManagerModalOperator(bpy.types.Operator):
     def update_state(self, context):
         new_state = {}
         selection_changed = False
-        state_changed = []
+        state_changed = {}
 
         subject = anim_utils.get_global_playback_manager()
         if subject.animation_data is None:
@@ -171,14 +206,14 @@ class PlaybackManagerModalOperator(bpy.types.Operator):
         
         for key, strip_state in new_state.items():
             if key not in self._strips_state:
-                state_changed.append(key)
+                state_changed[key] = None
             else:
                 if (self._strips_state[key].frame_start != strip_state.frame_start or
                     self._strips_state[key].frame_end != strip_state.frame_end or
                     self._strips_state[key].hide_before != strip_state.hide_before or
                     self._strips_state[key].hide_after != strip_state.hide_after or
                     self._strips_state[key].scale != strip_state.scale):
-                    state_changed.append(key)
+                    state_changed[key] = self._strips_state[key]
                 if self._strips_state[key].select != strip_state.select:
                     selection_changed = True
 
@@ -251,11 +286,8 @@ class PlaybackManagerModalOperator(bpy.types.Operator):
             v2d = context.region.view2d
             self._dragging_end_frame = v2d.region_to_view(event.mouse_region_x, 0)[0]
             frame_delta = self._dragging_end_frame - self._dragging_start_frame
-            trim_succeeded = True
             for strip in context.selected_nla_strips:
-                trim_succeeded = trim_succeeded and trim_strip(strip, self._dragging_type, frame_delta)
-            if not trim_succeeded:
-                self.report({'INFO'}, "Trimming does not work on reversed or extended clips.")
+                trim_strip(strip, self._dragging_type, frame_delta)
 
         if self._dragging_mode and event.type == 'MOUSEMOVE':
             self._dragging_mode = False

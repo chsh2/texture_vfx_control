@@ -218,9 +218,14 @@ class AddPlaybackDriverOperator(bpy.types.Operator):
 
             if self.controller == 'GLOBAL':
                 len_loop = max(1, round( (frame_duration-1.0) / playback_rate) )
+                if self.playback_pingpong:
+                    len_loop = len_loop * 2 + 1
+                    frame_end = frame_current + int(self.playback_loops * 0.5 * len_loop)
+                else:
+                    frame_end = frame_current + self.playback_loops * len_loop
             else:
                 len_loop += 1
-            frame_end = frame_current + self.playback_loops * len_loop - (self.controller != 'GLOBAL')
+                frame_end = frame_current + self.playback_loops * len_loop - 1
             if self.hide_before:
                 bpy.context.scene.frame_set(frame_current - 1)
                 top_node.inputs[1].default_value = True
