@@ -160,6 +160,64 @@ def trim_strip(strip, trim_type, frame_delta):
         strip.frame_end += frame_delta
     return True
 
+def remap_keyframes(old_state, new_state, use_left_pivot=True):
+    strip = new_state.strip
+    if strip.action is None or "tfxMediaNodeGroup" not in strip.action:
+        return False
+
+    media_node_group = strip.action["tfxMediaNodeGroup"]
+    fc_to_remap = []
+
+    groups_to_map = set()
+    for group in bpy.data.node_groups:
+        if "TfxRoot" in group.nodes and group.nodes["TfxRoot"].type == 'GROUP' and group.nodes["TfxRoot"].node_tree == media_node_group:
+            groups_to_map.add(group.name)
+            if "tfxName" in group and group["tfxName"] == "Interface":
+                continue
+            if bpy.context.scene.tfx_editor_sync_frames_fx:
+                if group.animation_data and group.animation_data.action:
+                    fcurves = anim_utils.get_action_fcurves(group.animation_data.action)
+                    fc_to_remap += [f for f in fcurves]
+                if "TfxParam" in group.nodes and group.nodes["TfxParam"].node_tree:
+                    param_group = group.nodes["TfxParam"].node_tree
+                    if param_group.animation_data and param_group.animation_data.action:
+                        fcurves = anim_utils.get_action_fcurves(param_group.animation_data.action)
+                        fc_to_remap += [f for f in fcurves]
+
+    mats_to_map = set()
+    if bpy.context.scene.tfx_editor_sync_obj_properties or bpy.context.scene.tfx_editor_sync_mat_properties:
+        for mat in bpy.data.materials:
+            if mat.node_tree:
+                group_nodes = [node for node in mat.node_tree.nodes if node.type == 'GROUP' and node.node_tree]
+                for group_node in group_nodes:
+                    if group_node.node_tree.name in groups_to_map:
+                        mats_to_map.add(mat.name)
+                        if bpy.context.scene.tfx_editor_sync_mat_properties and mat.node_tree.animation_data and mat.node_tree.animation_data.action:
+                            fcurves = anim_utils.get_action_fcurves(mat.node_tree.animation_data.action)
+                            fc_to_remap += [f for f in fcurves]
+                        break
+    
+    if bpy.context.scene.tfx_editor_sync_obj_properties:
+        for obj in bpy.data.objects:
+            if obj.type == 'MESH' and obj.data:
+                all_mat = list(obj.data.materials) + [slot.material for slot in obj.material_slots if slot.material]
+                for mat in all_mat:
+                    if mat and mat.name in mats_to_map:
+                        if obj.animation_data and obj.animation_data.action:
+                            fcurves = anim_utils.get_action_fcurves(obj.animation_data.action)
+                            fc_to_remap += [f for f in fcurves]
+                        break
+
+    scale_factor = new_state.scale / old_state.scale
+    for fc in fc_to_remap:
+        for kp in fc.keyframe_points:
+            if use_left_pivot:
+                kp.co.x = new_state.frame_start + (kp.co.x - old_state.frame_start) * scale_factor
+            else:
+                kp.co.x = new_state.frame_end - (old_state.frame_end - kp.co.x) * scale_factor
+        fc.update()
+    return True
+
 class PlaybackManagerModalOperator(bpy.types.Operator):
     """Custom UI for editing multiple video strips in the NLA editor"""
     bl_idname = "tfx.playback_manager_modal"
@@ -300,6 +358,9 @@ class PlaybackManagerModalOperator(bpy.types.Operator):
             selection_changed, state_changed = self.update_state(context)
             if selection_changed:
                 select_objects_by_strips(context)
+            for key, old_state in state_changed.items():
+                if old_state is not None:
+                    remap_keyframes(old_state, self._strips_state[key], use_left_pivot=(self._dragging_type != 1))
             for key in state_changed:
                 set_strip_visibility(self._strips_state[key])
 

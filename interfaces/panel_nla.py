@@ -12,7 +12,7 @@ class TFX_PT_panel_strip_properties(bpy.types.Panel):
     bl_region_type = "UI"
     bl_category = "TexFX"
     bl_context = "objectmode"
-    bl_order = 2
+    bl_order = 0
     
     @classmethod
     def poll(cls, context):
@@ -25,7 +25,28 @@ class TFX_PT_panel_strip_properties(bpy.types.Panel):
         strip = context.selected_nla_strips[0]
         layout = self.layout
         layout.label(text="Hide the video:")
-        row = layout.row()
+        row = layout.box().row()
         row.enabled = is_modal_running()
         row.prop(strip.action, '["tfxHideBefore"]', text="Before Start")
         row.prop(strip.action, '["tfxHideAfter"]', text="After End")
+
+class TFX_PT_panel_editor_settings(bpy.types.Panel):
+    bl_idname = 'TFX_PT_panel_editor_settings'
+    bl_label = "Editor Settings"
+    bl_space_type = "NLA_EDITOR"
+    bl_region_type = "UI"
+    bl_category = "TexFX"
+    bl_context = "objectmode"
+    bl_order = 1
+    
+    @classmethod
+    def poll(cls, context):
+        return context.workspace.name == "Media Playback"
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Synchronize keyframes:")
+        box = layout.box()
+        box.prop(context.scene, 'tfx_editor_sync_frames_fx')
+        box.prop(context.scene, 'tfx_editor_sync_obj_properties')
+        box.prop(context.scene, 'tfx_editor_sync_mat_properties')
