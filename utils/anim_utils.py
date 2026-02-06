@@ -67,28 +67,29 @@ def set_playhead_driver(tree, length, subject, id_type, datapath_playhead, datap
     add_driver_variable(fc.driver, subject, datapath_duration, 'd', id_type=id_type)
     fc.driver.expression = expr
 
-def set_strip_driver(tree, length, subject, track_name, strip_name, out=False):
+def set_strip_transition_driver(tree, action, out=False):
     if "TfxParam" not in tree.nodes or "Group Output" not in tree.nodes["TfxParam"].node_tree.nodes:
         return
+
     node = tree.nodes["TfxParam"].node_tree.nodes["Group Output"]
     if not out and "In" in node.inputs:
         target = node.inputs["In"]
-        datapath = 'frame_start'
-        expr = f"max(0.0,min((t-f)/{length}, 1.0))"
+        datapath = 'tfxStripStart'
+        length = 'tfxInLength'
+        expr = f"max(0.0,min((t-f)/l, 1.0))"
     elif out and "Out" in node.inputs:
         target = node.inputs["Out"]
-        datapath = 'frame_end'
-        expr = f"1.0-max(0.0,min((f-t)/{length}, 1.0))"
+        datapath = 'tfxStripEnd'
+        length = 'tfxOutLength'
+        expr = f"1.0-max(0.0,min((f-t)/l, 1.0))"
     else:
         return
+
     target.driver_remove('default_value')
     fc = target.driver_add('default_value')
     fc.driver.type = 'SCRIPTED'
-    add_driver_variable(
-        fc.driver, subject, 
-        f'animation_data.nla_tracks["{track_name}"].strips["{strip_name}"].{datapath}', 
-        'f', id_type='OBJECT', custom_property=False
-    )
+    add_driver_variable(fc.driver, action, datapath, 'f', id_type='ACTION')
+    add_driver_variable(fc.driver, action, length, 'l', id_type='ACTION')
     add_driver_variable(
         fc.driver, bpy.context.scene, 
         'frame_current', 

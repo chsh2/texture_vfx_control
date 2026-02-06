@@ -245,17 +245,25 @@ class AddPlaybackDriverOperator(bpy.types.Operator):
         
         # Convert keyframes to NLA strip
         if self.controller == 'GLOBAL':
-            subject.animation_data.action["tfxMediaNodeGroup"] = media_node_tree
-            subject.animation_data.action["tfxHideBefore"] = self.hide_before
-            subject.animation_data.action["tfxHideAfter"] = self.hide_after
             track = subject.animation_data.nla_tracks.new()
             strip = track.strips.new("tmp", context.scene.frame_current, subject.animation_data.action)
+            subject.animation_data.action = None
             track.name = image_node.image.name
             strip.name = image_node.image.name
             strip.use_reverse = self.playback_reversed
             strip.scale = 1 / playback_rate
             strip.repeat = self.playback_loops / (1.0 + self.playback_pingpong)
-            subject.animation_data.action = None
+            strip.action["tfxMediaNodeGroup"] = media_node_tree
+            strip.action["tfxHideBefore"] = self.hide_before
+            strip.action["tfxHideAfter"] = self.hide_after
+            strip.action["tfxStripStart"] = frame_current
+            strip.action["tfxStripEnd"] = frame_end
+            strip.action["tfxInLength"] = 12
+            strip.action["tfxOutLength"] = 12
+            for dp in ("tfxInLength", "tfxOutLength"):
+                ui = strip.action.id_properties_ui(dp)
+                ui.update(min=1)
+            strip.action.update_tag()
             protect_nla_tracks()
         
         bpy.ops.tfx.refresh_playback_drivers()
@@ -315,6 +323,13 @@ class RemovePlaybackDriverOperator(bpy.types.Operator):
                             break
                 for track in tracks_to_remove:
                     subject.animation_data.nla_tracks.remove(track)
+
+            actions_to_remove = []
+            for action in bpy.data.actions:
+                if "tfxMediaNodeGroup" in action and action["tfxMediaNodeGroup"] == media_node_tree:
+                    actions_to_remove.append(action)
+            for action in actions_to_remove:
+                bpy.data.actions.remove(action)
                 
             del top_node.node_tree["tfxPlaybackControl"]
 

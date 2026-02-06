@@ -26,12 +26,12 @@ def register():
     bpy.types.Scene.tfx_editor_sync_obj_properties = bpy.props.BoolProperty(
         name='Object Properties',
         default=False,
-        description='Synchronize keyframes of object properties when video strips are moved'
+        description='Synchronize keyframes of object properties when video strips are moved. Please avoid using this option if an object contains multiple video textures'
     )
     bpy.types.Scene.tfx_editor_sync_mat_properties = bpy.props.BoolProperty(
         name='Material Properties',
         default=False,
-        description='Synchronize keyframes of material properties when video strips are moved'
+        description='Synchronize keyframes of material properties when video strips are moved. Please avoid using this option if a material contains multiple video textures'
     )
     auto_load.register()
     bpy.types.NLA_HT_header.prepend(panel_nla.draw_nla_header)

@@ -29,6 +29,10 @@ class TFX_PT_panel_strip_properties(bpy.types.Panel):
         row.enabled = is_modal_running()
         row.prop(strip.action, '["tfxHideBefore"]', text="Before Start")
         row.prop(strip.action, '["tfxHideAfter"]', text="After End")
+        layout.label(text="Transition:")
+        box = layout.box()
+        box.prop(strip.action, '["tfxInLength"]', text="In Frames")
+        box.prop(strip.action, '["tfxOutLength"]', text="Out Frames")
 
 class TFX_PT_panel_editor_settings(bpy.types.Panel):
     bl_idname = 'TFX_PT_panel_editor_settings'

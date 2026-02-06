@@ -164,6 +164,9 @@ def remap_keyframes(old_state, new_state, use_left_pivot=True):
     strip = new_state.strip
     if strip.action is None or "tfxMediaNodeGroup" not in strip.action:
         return False
+    strip.action["tfxStripStart"] = new_state.frame_start
+    strip.action["tfxStripEnd"] = new_state.frame_end
+    strip.action.update_tag()
 
     media_node_group = strip.action["tfxMediaNodeGroup"]
     fc_to_remap = []
@@ -363,5 +366,7 @@ class PlaybackManagerModalOperator(bpy.types.Operator):
                     remap_keyframes(old_state, self._strips_state[key], use_left_pivot=(self._dragging_type != 1))
             for key in state_changed:
                 set_strip_visibility(self._strips_state[key])
+            if len(state_changed) > 0:
+                bpy.context.view_layer.update()
 
         return {'PASS_THROUGH'}
