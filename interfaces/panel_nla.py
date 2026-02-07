@@ -51,6 +51,7 @@ class TFX_PT_panel_strip_properties(bpy.types.Panel):
         row.label(text=f" / {strip.action.frame_range[1]:.0f}")
         row = box.row()
         row.operator("nla.action_sync_length", text="Reset", icon="FILE_REFRESH")
+        layout.operator("tfx.append_media")
 
 class TFX_PT_panel_editor_settings(bpy.types.Panel):
     bl_idname = 'TFX_PT_panel_editor_settings'

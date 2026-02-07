@@ -1,4 +1,6 @@
 import bpy
+from bpy_extras.io_utils import ImportHelper
+from mathutils import Vector
 from ..utils import anim_utils, media_utils
 
 _is_playback_manager_modal_running = False
@@ -380,3 +382,144 @@ class PlaybackManagerModalOperator(bpy.types.Operator):
                 bpy.context.view_layer.update()
 
         return {'PASS_THROUGH'}
+
+class AppendMediaOperator(bpy.types.Operator, ImportHelper):
+    """Insert another media after the currently selected strip. Mesh, material and related settings will be inherited from the current strip"""
+    bl_idname = "tfx.append_media"
+    bl_label = "Append Media"
+    bl_category = 'View'
+    bl_options = {'REGISTER', 'UNDO'}
+
+    directory: bpy.props.StringProperty(subtype='DIR_PATH')
+    files: bpy.props.CollectionProperty(type=bpy.types.OperatorFileListElement)
+    filepath = bpy.props.StringProperty(name="File Path", subtype='FILE_PATH')
+    filter_folder: bpy.props.BoolProperty(default=True, options={'HIDDEN'})
+    filter_image: bpy.props.BoolProperty(default=True, options={'HIDDEN'})
+    filter_movie: bpy.props.BoolProperty(default=True, options={'HIDDEN'})
+    delta_location: bpy.props.FloatVectorProperty(
+        default = (1e-4, 1e-4, 1e-4),
+        name = "Location Offset",
+        description='Apply a small offset to the location of the object, since completely overlapping objects may lead to display errors',
+    )
+
+    def draw(self, context):
+        layout = self.layout
+        layout.label(text="Location Offset:")
+        layout.prop(self, "delta_location", text="")
+
+    def execute(self, context):
+        if context.selected_nla_strips is None:
+            return {'CANCELLED'}
+        nla_strips = [s for s in context.selected_nla_strips if s.action and "tfxMediaNodeGroup" in s.action]
+        if len(nla_strips) < 1:
+            return {'CANCELLED'}
+        for strip in nla_strips:
+            strip.select = False
+        src_strip = nla_strips[0]
+        src_media_node_group = src_strip.action["tfxMediaNodeGroup"]
+
+        # Find the object and material to duplicate
+        objs = [o for o in context.scene.objects if o.data and hasattr(o.data, "materials")]
+        src_obj = None
+        src_slot_idx = -1
+        node_to_replace = None
+        for obj in objs:
+            for i,slot in enumerate(obj.material_slots):
+                mat = slot.material
+                if mat and mat.node_tree:
+                    group_nodes = [node for node in mat.node_tree.nodes if node.type == 'GROUP' and node.node_tree]
+                    for group_node in group_nodes:
+                        if 'TfxRoot' in group_node.node_tree.nodes:
+                            inner_node_tree = group_node.node_tree.nodes['TfxRoot'].node_tree
+                            if inner_node_tree.name == src_media_node_group.name:
+                                node_to_replace = group_node.name
+                                src_obj = obj
+                                src_slot_idx = i
+                                break
+                if src_obj is not None:
+                    break
+            if src_obj is not None:
+                break
+
+        # Use the native operator to load files, which can detect movie or sequence automatically
+        files_dict = [{"name": f.name} for f in self.files]
+        images_pre = {img.name: img for img in bpy.data.images}
+        bpy.ops.image.open(
+            filepath=self.filepath,
+            directory=self.directory, 
+            files=files_dict, 
+            relative_path=True,
+            use_sequence_detection=True, use_udim_detecting=True
+        )
+        images_post = {img.name: img for img in bpy.data.images}
+        
+        # The user may import multiple files, but only one can be loaded in the node group
+        target_image = None
+        for name in images_post:
+            if name not in images_pre:
+                target_image = images_post[name]
+                break
+        for item in files_dict:
+            if item["name"] in images_post:
+                target_image = images_post[item["name"]]
+                break
+        if target_image is None:
+            self.report({'ERROR'}, 'Failed to load new media file')
+            return {'CANCELLED'}
+
+        # Duplicate object, mesh, material and replace the media node
+        context.scene.frame_set(int(src_strip.frame_end + 1))
+        dst_obj = bpy.data.objects.new(target_image.name, src_obj.data.copy())
+        dst_obj.data.name = target_image.name
+        context.collection.objects.link(dst_obj)
+
+        dst_obj.parent_type = src_obj.parent_type
+        dst_obj.parent = src_obj.parent
+        dst_obj.parent_bone = src_obj.parent_bone
+        dst_obj.parent_vertices = src_obj.parent_vertices
+        
+        dst_obj.location = src_obj.location
+        dst_obj.rotation_mode = src_obj.rotation_mode
+        dst_obj.rotation_euler = src_obj.rotation_euler
+        dst_obj.rotation_quaternion = src_obj.rotation_quaternion
+        dst_obj.rotation_axis_angle = src_obj.rotation_axis_angle
+        dst_obj.scale = src_obj.scale
+
+        dst_obj.delta_location = src_obj.delta_location + Vector(self.delta_location)
+        dst_obj.delta_scale = src_obj.delta_scale
+        dst_obj.delta_rotation_euler = src_obj.delta_rotation_euler
+        dst_obj.delta_rotation_quaternion = src_obj.delta_rotation_quaternion
+
+        slot = dst_obj.material_slots[src_slot_idx]
+        slot.material = slot.material.copy()
+        slot.material.name = target_image.name
+        node_tree = slot.material.node_tree
+        node_tree.animation_data_clear()
+        src_node = node_tree.nodes[node_to_replace]
+        dst_node = node_tree.nodes.new("ShaderNodeTexImage")
+        dst_node.location = src_node.location
+        for link in src_node.inputs['UV'].links:
+            node_tree.links.new(link.from_socket, dst_node.inputs['Vector'])      
+        for link in src_node.outputs['Color'].links:
+            node_tree.links.new(dst_node.outputs['Color'], link.to_socket)
+        for link in src_node.outputs['Alpha'].links:
+            node_tree.links.new(dst_node.outputs['Alpha'], link.to_socket)
+        node_tree.nodes.active = dst_node
+        node_tree.nodes.remove(src_node)
+
+        dst_node.image = target_image
+        dst_node.interpolation = src_media_node_group.nodes['TfxMedia'].interpolation
+        dst_node.projection = src_media_node_group.nodes['TfxMedia'].projection
+        dst_node.extension = src_media_node_group.nodes['TfxMedia'].extension
+        if target_image.source in ('MOVIE', 'SEQUENCE'):
+            dst_node.image_user.use_auto_refresh = True
+            dst_node.image_user.use_cyclic = True
+
+        # Convert the media with other add-on operators
+        for obj in context.selected_objects:
+                obj.select_set(False)
+        context.view_layer.objects.active = dst_obj
+        bpy.ops.tfx.wrap_media(image_name=target_image.name)
+        bpy.ops.tfx.add_playback_driver(controller='GLOBAL')
+
+        return {'FINISHED'}
