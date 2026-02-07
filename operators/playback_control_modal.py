@@ -7,11 +7,19 @@ def is_modal_running():
     return _is_playback_manager_modal_running
 
 def protect_nla_tracks():
-    subject = anim_utils.get_global_playback_manager()
-    if is_modal_running() or subject.animation_data is None:
+    if is_modal_running():
         return
-    for track in subject.animation_data.nla_tracks:
-        track.lock = True
+
+    key = "tfxPlaybackManager"
+    subjects = []
+    for scene in bpy.data.scenes:
+        if key in scene and scene[key].name in scene.objects:
+            subjects.append(scene[key])
+
+    for subject in subjects:
+        if subject.animation_data is not None:
+            for track in subject.animation_data.nla_tracks:
+                track.lock = True
 
 class StripMode:
     LOOP = 1
@@ -33,20 +41,22 @@ def select_objects_by_strips(context):
         return
     for obj in context.selected_objects:
         obj.select_set(False)
-    objs = [o for o in context.scene.objects if o.type == 'MESH' and o.data]
+    objs = [o for o in context.scene.objects if o.data and hasattr(o.data, "materials")]
     media_node_groups = set()
     for strip in context.selected_nla_strips:
         if strip.action and "tfxMediaNodeGroup" in strip.action:
             media_node_groups.add(strip.action["tfxMediaNodeGroup"].name)
     for obj in objs:
-        all_mat = list(obj.data.materials) + [slot.material for slot in obj.material_slots if slot.material]
-        for mat in all_mat:
-            if mat.node_tree:
+        for slot in obj.material_slots:
+            mat = slot.material
+            if mat and mat.node_tree:
                 group_nodes = [node for node in mat.node_tree.nodes if node.type == 'GROUP' and node.node_tree]
                 for group_node in group_nodes:
                     if 'TfxRoot' in group_node.node_tree.nodes:
                         inner_node_tree = group_node.node_tree.nodes['TfxRoot'].node_tree
                         if inner_node_tree.name in media_node_groups:
+                            mat.node_tree.nodes.active = group_node
+                            obj.active_material_index = slot.slot_index
                             obj.select_set(True)
                             context.view_layer.objects.active = obj
                             break
@@ -202,9 +212,9 @@ def remap_keyframes(old_state, new_state, use_left_pivot=True):
     
     if bpy.context.scene.tfx_editor_sync_obj_properties:
         for obj in bpy.data.objects:
-            if obj.type == 'MESH' and obj.data:
-                all_mat = list(obj.data.materials) + [slot.material for slot in obj.material_slots if slot.material]
-                for mat in all_mat:
+            if obj.data and hasattr(obj.data, "materials"):
+                for slot in obj.material_slots:
+                    mat = slot.material
                     if mat and mat.name in mats_to_map:
                         if obj.animation_data and obj.animation_data.action:
                             fcurves = anim_utils.get_action_fcurves(obj.animation_data.action)
