@@ -1,0 +1,16 @@
+project:
+  type: book
+
+book:
+  author: "chsh2"
+  sidebar:
+    tools:
+      - icon: github
+        href: https://github.com/chsh2/texture_vfx_control
+      - icon: bluesky
+        href: https://bsky.app/profile/chsh2.bsky.social
+      - icon: twitter
+        href: https://x.com/chaosinism
+      - icon: youtube
+        href: http://www.youtube.com/@chaosinism9491
+

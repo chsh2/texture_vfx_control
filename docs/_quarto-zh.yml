@@ -1,0 +1,35 @@
+project:
+  output-dir: ./_book/zh
+  #lib-dir: ../site_libs
+
+book:
+  title: "Texture VFX Control: 使用说明"
+  chapters:
+    - index.qmd
+    - get_started-zh.qmd
+    - part: fx-zh.qmd
+      chapters:
+        - fx_gallery-zh.qmd
+    - part: playback-zh.qmd
+      chapters:
+        - playback_global-zh.qmd
+    - blender_setting-zh.qmd
+    - part: "开发者笔记"
+      chapters:
+        - concept-zh.qmd
+        - data_structure-zh.qmd
+  navbar:
+    right:
+      - href: ..
+        text: English
+      - href: ../zh
+        text: 中文
+
+lang: zh
+
+format:
+  html:
+    theme:
+      light: flatly
+      dark: darkly
+    respect-user-color-scheme: true

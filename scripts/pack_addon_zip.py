@@ -11,6 +11,8 @@ EXTRA_IGNORE = [
     "/.git/",
     "/.github/",
     ".git*",
+    "/docs",
+    "README.md"
 ]
 
 ignore_lines = []
