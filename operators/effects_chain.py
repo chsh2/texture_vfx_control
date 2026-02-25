@@ -186,7 +186,7 @@ class SetEffectTemporalDriverOperator(bpy.types.Operator):
             self.length = 1
         if self.param_name == 'Random Seed':
             rate = 1.0 / self.length
-        elif self.param_name == 'Phase':
+        elif self.param_name.startswith("Phase"):
             rate = 2.0 * pi / self.length
         anim_utils.set_linear_temporal_driver(tree, self.param_name, rate, self.offset)
         

@@ -140,7 +140,7 @@ class TFX_PT_panel_fx_chain(bpy.types.Panel):
                             op = row.operator("tfx.set_transition_playback_driver", text='', icon='LINKED')
                             op.transition_type = p.name
                             op.node_group_name = tree.name
-                        if p.name in ("Random Seed", "Phase"):
+                        if p.name == "Random Seed" or p.name.startswith("Phase"):
                             op = row.operator("tfx.set_effect_temporal_driver", text='', icon='LINKED')
                             op.param_name = p.name
                             op.node_group_name = tree.name

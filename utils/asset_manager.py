@@ -18,7 +18,8 @@ template_fx_list = [
         {"name": "Chroma Key", "file": basic_template_filepath, "node_name": "chroma_key"},
         {"name": "Alpha Choker", "file": basic_template_filepath, "node_name": "alpha_choker"},
         {"name": "Alpha Clip", "file": basic_template_filepath, "node_name": "alpha_clip"},
-        {"name": "Luma Key", "file": basic_template_filepath, "node_name": "luma_key"},]
+        {"name": "Luma Key", "file": basic_template_filepath, "node_name": "luma_key"},
+        {"name": "Fill Transparency", "file": basic_template_filepath, "node_name": "fill_transparency"},]
     },
     {"category": "Blur/Enhancement", "effects": [
         {"name": "Grainy Blur", "file": basic_template_filepath, "node_name": "grainy_blur"},
@@ -28,16 +29,19 @@ template_fx_list = [
         {"name": "Rim Light / Shadow", "file": basic_template_filepath, "node_name": "rim_light"},]
     },
     {"category": "Distortion", "effects": [
+        {"name": "Basic Transform", "file": basic_template_filepath, "node_name": "basic_transform"},
         {"name": "Wave", "file": basic_template_filepath, "node_name": "wave"},
         {"name": "Fisheye", "file": basic_template_filepath, "node_name": "fisheye"},
         {"name": "Swirl", "file": basic_template_filepath, "node_name": "swirl"},
         {"name": "Turbulence", "file": basic_template_filepath, "node_name": "turbulence"},
+        {"name": "Kaleidoscope", "file": basic_template_filepath, "node_name": "kaleidoscope"},
         {"name": "Shake", "file": basic_template_filepath, "node_name": "shake"},]
     },
     {"category": "Stylization", "effects": [
         {"name": "Pixelate", "file": basic_template_filepath, "node_name": "pixelate"},
         {"name": "Vignette", "file": basic_template_filepath, "node_name": "vignette"},
         {"name": "Halftone", "file": basic_template_filepath, "node_name": "halftone"},
+        {"name": "Stained Glass", "file": basic_template_filepath, "node_name": "stained_glass"},
         {"name": "Dither", "file": basic_template_filepath, "node_name": "dither"},
         {"name": "RGB Split", "file": basic_template_filepath, "node_name": "rgb_split"},]
     },
@@ -52,6 +56,7 @@ template_fx_list = [
         {"name": "Linear Slide", "file": basic_template_filepath, "node_name": "linear_slide"},
         {"name": "Linear Wipe", "file": basic_template_filepath, "node_name": "linear_wipe"},
         {"name": "Clock Wipe", "file": basic_template_filepath, "node_name": "clock_wipe"},
+        {"name": "Page Curl", "file": basic_template_filepath, "node_name": "page_curl"},
         {"name": "Tile", "file": basic_template_filepath, "node_name": "tile"},
         {"name": "Burn", "file": basic_template_filepath, "node_name": "burn"},]
     },
