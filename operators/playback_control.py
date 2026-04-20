@@ -370,6 +370,9 @@ class RefreshDriversOperator(bpy.types.Operator):
         image_node, media_node_tree = node_utils.get_active_image_node()
         if media_node_tree.animation_data:
             for fc in media_node_tree.animation_data.drivers:
+                for var in fc.driver.variables:
+                    if var.targets[0].id_type == 'SCENE':
+                        var.targets[0].id = bpy.context.scene
                 tmp = fc.driver.expression
                 fc.driver.expression = tmp
         return {'FINISHED'}

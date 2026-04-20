@@ -118,7 +118,7 @@ class ReplaceMediaOperator(bpy.types.Operator, ImportHelper):
             directory=self.directory, 
             files=files_dict, 
             relative_path=True,
-            use_sequence_detection=True, use_udim_detecting=True
+            use_sequence_detection=True, use_udim_detecting=False
         )
         images_post = {img.name: img for img in bpy.data.images}
         

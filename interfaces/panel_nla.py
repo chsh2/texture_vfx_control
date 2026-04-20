@@ -36,6 +36,7 @@ class TFX_PT_panel_strip_properties(bpy.types.Panel):
         layout.label(text="Playing Mode:")
         box = layout.box()
         box.enabled = is_modal_running()
+        box.prop(strip, "frame_start_ui", text="Start Frame")
         box.prop(strip, "scale")
         box.prop(strip, "repeat")
         box.prop(strip, "use_reverse")

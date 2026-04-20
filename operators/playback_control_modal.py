@@ -107,7 +107,7 @@ def get_strip_flags(strip, fc):
         flags.add(StripMode.LOOP)
     if abs(strip.action_frame_end - strip.action.frame_range[1]) + abs(strip.action_frame_start - strip.action.frame_range[0]) > 1e-6:
         flags.add(StripMode.EXTEND)
-    if len(fc.keyframe_points) != 2:
+    if len(fc.keyframe_points) > 2:
         flags.add(StripMode.PINGPONG)
     return flags
 
@@ -162,7 +162,8 @@ def trim_strip(strip, trim_type, frame_delta):
         manager[f'tfxFirstFrame_{suffix}'] += int(frame_delta / strip.scale)
         manager[f'tfxFrameDuration_{suffix}'] -= int(frame_delta / strip.scale)  
 
-    fc.keyframe_points[-1].co.x = fc.keyframe_points[0].co.x + manager[f'tfxFrameDuration_{suffix}'] - 1
+    if len(fc.keyframe_points) == 2:
+        fc.keyframe_points[-1].co.x = fc.keyframe_points[0].co.x + manager[f'tfxFrameDuration_{suffix}'] - 1
     fc.update()
     strip.action_frame_end = strip.action.frame_range[1]
     if strip.use_reverse:
@@ -449,7 +450,7 @@ class AppendMediaOperator(bpy.types.Operator, ImportHelper):
             directory=self.directory, 
             files=files_dict, 
             relative_path=True,
-            use_sequence_detection=True, use_udim_detecting=True
+            use_sequence_detection=True, use_udim_detecting=False
         )
         images_post = {img.name: img for img in bpy.data.images}
         

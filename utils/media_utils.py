@@ -5,7 +5,10 @@ import bpy
 def get_media_duration(image):
     if image.source == 'SEQUENCE':
         # Decompose the filepath according to the naming convention
-        dirname, basename = os.path.dirname(image.filepath), os.path.basename(image.filepath)
+        abspath = bpy.path.abspath(image.filepath)
+        if not os.path.isfile(abspath):
+            return 1
+        dirname, basename = os.path.dirname(abspath), os.path.basename(abspath)
         prefix, ext = os.path.splitext(basename)
         m = re.match(r"(.*?)(\d+)$", prefix)
         if not m:

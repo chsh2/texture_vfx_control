@@ -23,6 +23,7 @@ template_fx_list = [
     },
     {"category": "Blur/Enhancement", "effects": [
         {"name": "Grainy Blur", "file": basic_template_filepath, "node_name": "grainy_blur"},
+        {"name": "Radial Blur", "file": basic_template_filepath, "node_name": "radial_blur"},
         {"name": "Sharpen", "file": basic_template_filepath, "node_name": "sharpen"},
         {"name": "Outline", "file": basic_template_filepath, "node_name": "outline"},
         {"name": "Edge Detection", "file": basic_template_filepath, "node_name": "edge_detection"},
