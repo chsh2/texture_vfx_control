@@ -5,3 +5,5 @@ __pycache__/
 *.blend1
 *.zip
 *.sketch
+/.quarto/
+**/*.quarto_ipynb

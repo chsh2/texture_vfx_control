@@ -1,1 +1,49 @@
 # Data Structure {.unnumbered}
+
+This chapter describes the metadata added to Blender's standard object data blocks by this add-on in order to achieve its functionalities. The following sections are mainly for developers rather than general users.
+
+## Effect Shader Node Groups
+
+Each type of visual effect is a shader node group predefined in a `.blend` file. Each group contains several nodes with certain names for the add-on to identify and operate on them. The node group also has some custom properties.
+
+### Necessary Nodes
+
+| Name | Description |
+| - | - |
+| TfxRoot | A pointer to the video/image media node group. |
+| TfxNext | A pointer to the previous effect of the same media. Equal to `TfxRoot` if this is the first effect. For effects requiring multiple sets of UV, there are also `TfxNext.001`, `TfxNext.002`... |
+| TfxParam | A pointer to another node group with a single output node defining the parameters of the effect, which is displayed in the UI panel for the user to modify. |
+| TfxDriverObjLec | Indicates that this effect supports using the location of another object in the scene as a driver. |
+
+### Custom Properties
+
+| Name | Description |
+| - | - |
+| tfxName | Name of the effect shown in the UI panel |
+| tfxPromoted | Lists pairs of node&attribute names. These attributes will be displayed in the UI panel. |
+
+## Video Playback Control
+
+When adding a playback controller to a video/sequence, the add-on defines custom properties in the outermost effect node group, which are referred in the driver of the Image Texture Node's frame offset value.
+
+In case of the global manager mode, the add-on defines additional custom properties to the NLA track strip's action data block.
+
+### Keyframe Setup
+
+| Name | Description |
+| - | - |
+| tfxPlaybackControl | Whether the video has a playback controller and its type. |
+| tfxFrameDuration | The number of frames to be played. |
+| tfxFirstFrame | The frame number of the original video to be played as the first frame. |
+| tfxPlayhead | The playback slider shown in the UI panel for the user to adjust or add keyframes to. |
+
+### Global Manager
+
+| Name | Description |
+| - | - |
+| tfxStripStart | Caches the start frame of the NLA strip to measure the change after a user input. |
+| tfxStripEnd | Caches the end frame of the NLA strip to measure the change after a user input. |
+| tfxHideBefore | Whether to hide the video before it starts to play. |
+| tfxHideAfter | Whether to hide the video after it finishes playing. |
+| tfxInLength | The number of frames of fade-in transition effects. |
+| tfxOutLength | The number of frames of fade-out transition effects. |

@@ -2,7 +2,7 @@ project:
   type: book
 
 book:
-  author: "chsh2"
+  author: "chsh2.github.io"
   sidebar:
     tools:
       - icon: github
@@ -13,4 +13,3 @@ book:
         href: https://x.com/chaosinism
       - icon: youtube
         href: http://www.youtube.com/@chaosinism9491
-
