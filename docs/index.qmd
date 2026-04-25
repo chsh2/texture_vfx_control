@@ -11,7 +11,7 @@ Main features:
   - Cropping, speed adjustment and reverse playback controlled by keyframes
   - A workspace for arranging multiple video clips
 - **Effects Chain Control**
-  - Quick application of over 30 popular video effects
+  - Quick application of over 40 popular video effects
   - Non-destructive editing of multiple effects as a chain
   - Save effects as presets and transfer them between objects
 
@@ -19,16 +19,17 @@ Current version: `v1.1`
 
 ## Requirements
 
-Blender 4.2 - 5.0
+Blender 4.2 - 5.1
 
 ## Credits
 
-The shader node groups in this add-on have the following references:
+The shader node groups in this add-on are inspired by the following references:
 
 - https://github.com/obsproject/obs-studio/blob/master/plugins/obs-filters/data/chroma_key_filter.effect
 - https://godotshaders.com/shader/green-screen-chromakey/
 - https://www.shadertoy.com/view/7sscD4
 - https://www.shadertoy.com/view/4s2GRR
+- https://www.shadertoy.com/view/ls3cDB
 
 The following assets are used for demonstration purposes in the documentation:
 
@@ -52,7 +53,7 @@ Texture VFX Control是一个Blender插件，作用于媒体纹理（图片、图
   - 视频剪裁/变速/倒放、利用关键帧控制播放进度
   - 全新的管理器界面，用来组织同一个场景中的多个视频
 - 视频特效管理
-  - 一键应用超过30种常见的视频特效/转场
+  - 一键应用超过40种常见的视频特效/转场
   - 复数特效的链式管理与非破坏性编辑
   - 保存特效作为预置、为多个物体批量应用特效
 
@@ -60,7 +61,7 @@ Texture VFX Control是一个Blender插件，作用于媒体纹理（图片、图
 
 ## 系统需求
 
-Blender 4.2 ~ 5.0
+Blender 4.2 ~ 5.1
 
 ## 致谢
 
@@ -70,6 +71,7 @@ Blender 4.2 ~ 5.0
 - https://godotshaders.com/shader/green-screen-chromakey/
 - https://www.shadertoy.com/view/7sscD4
 - https://www.shadertoy.com/view/4s2GRR
+- https://www.shadertoy.com/view/ls3cDB
 
 功能演示中使用的示例素材来源：
 

@@ -16,6 +16,10 @@ Currently, the add-on provides two styles of playback controllers.
 
 Selecting `Local Keyframes` in the **Controller** option adds a new keyframe channel `tfxPlayhead` to the active material, which is also visible in the add-on panel. When this property value is 0, it corresponds to the start of video playback; when it is 1, it corresponds to the end of video playback. The user can make fine-grained control of the video playback through keyframes and F-Curves.
 
+:::{.callout-note}
+If the `tfxPlayhead` keyframe channel no longer affects the video playback, please use the `[Refresh]` button in the panel to reset the driver. When the object or the material of the video is appended to another Blender file as an asset, this process is also required.
+:::
+
 ### Presets of Playback Modes
 
 ![](images/playback_modes.png)

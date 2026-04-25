@@ -7,7 +7,7 @@ This chapter explores the Blender settings that may have a significant impact on
 The [Image Texture Node](https://docs.blender.org/manual/en/latest/render/shader_nodes/textures/image.html) which contains the media has the following settings relevant to some visual effects:
 
 - **Interpolation**: When using effects of the pixelated style, it is recommended to set this option to `Closest`. Otherwise, using `Smart` or `Cubic` will make the image smoother.
-- **Extension**: The Distortion effects may warp the image, leaving blank areas. This option determines whether the image is extended to fill these areas. Please note that some Transition effects will force disabling this option.
+- **Extension**: The Distortion effects may warp the image, leaving blank areas. This option determines whether the image is extended to fill these areas.
 
 These options are also displayed in the add-on side panel to make modifications easier.
 

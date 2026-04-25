@@ -1,1 +1,71 @@
 # Effects Gallery {.unnumbered}
+
+## Color
+| ![](images/fx/color_invert.png) | ![](images/fx/color_hsv.png) | ![](images/fx/color_bc.png) | ![](images/fx/color_curve.png) |
+| --- | --- | --- | --- |
+| Invert | HSV | Brightness/Contrast | RGB Curve |
+
+| ![](images/fx/color_gradientmap.png) | ![](images/fx/color_lineargradient.png) | ![](images/fx/color_quantization.png) | ![](images/fx/placeholder.png) |
+| --- | --- | --- | --- |
+| Gradient Map | Linear Gradient | Color Quantization |
+
+## Alpha
+
+| ![](images/fx/alpha_choker.png) | ![](images/fx/alpha_chromakey.png) | ![](images/fx/alpha_clip.png) | ![](images/fx/placeholder.png) |
+| --- | --- | --- | --- |
+| Alpha Choker | Chroma key | Alpha Clip |
+
+| ![](images/fx/alpha_filltransparency.png) | ![](images/fx/alpha_lumakey.png) | ![](images/fx/placeholder.png) | ![](images/fx/placeholder.png) |
+| --- | --- | --- | --- |
+| Fill Transparency | Luma Key |  |
+
+
+## Blur/Enhancement
+
+| ![](images/fx/enh_edgedetection.png) | ![](images/fx/enh_grainyblur.png) | ![](images/fx/enh_outline.png) | ![](images/fx/enh_radialblur.png) |
+| --- | --- | --- | --- |
+| Edge Detection | Grainy Blur | Outline | Radial Blur |
+
+| ![](images/fx/enh_sharpen.png) | ![](images/fx/enh_rim.png) | ![](images/fx/placeholder.png) | ![](images/fx/placeholder.png) |
+| --- | --- | --- | --- |
+| Sharpen | Rim Light/Shadow |  |  |
+
+
+## Distortion
+
+| ![](images/fx/distortion_basictransform.png) | ![](images/fx/distortion_fisheye.png) | ![](images/fx/distortion_kaleidoscope.png) | ![](images/fx/distortion_shake.png) |
+| --- | --- | --- | --- |
+| Basic Transform | Fisheye | Kaleidoscope | Shake |
+
+| ![](images/fx/distortion_swirl.png) | ![](images/fx/distortion_turbulence.png) | ![](images/fx/distortion_wave.png) | ![](images/fx/placeholder.png) |
+| --- | --- | --- | --- |
+| Swirl | Turbulence | Wave | |
+
+
+## Stylization
+
+| ![](images/fx/style_dither.png) | ![](images/fx/style_halftone.png) | ![](images/fx/style_pixelate.png) | ![](images/fx/style_rgbsplit.png) |
+| --- | --- | --- | --- |
+| Dither | Halftone | Pixelate | RGB Split |
+
+| ![](images/fx/style_stainedglass.png) | ![](images/fx/style_vignette.png) | ![](images/fx/placeholder.png) | ![](images/fx/placeholder.png) |
+| --- | --- | --- | --- |
+| Stained Glass | Vignette | | |
+
+
+## Simulation
+
+| ![](images/fx/sim_filmgrain.png) | ![](images/fx/sim_glitch.png) | ![](images/fx/sim_lcd.png) | ![](images/fx/sim_scanline.png) |
+| --- | --- | --- | --- |
+| Film Grain | Glitch | LCD | Scanline |
+
+
+## Transition
+
+| ![](images/fx/tran_burn.png) | ![](images/fx/tran_clockwipe.png) | ![](images/fx/tran_fade.png) | ![](images/fx/tran_linearslide.png) |
+| --- | --- | --- | --- |
+| Burn | Clock Wipe | Fade | Linear Slide |
+
+| ![](images/fx/tran_linearwipe.png) | ![](images/fx/tran_pagecurl.png) | ![](images/fx/tran_tile.png) | ![](images/fx/placeholder.png) |
+| --- | --- | --- | --- |
+| Linear Wipe | Page Curl | Tile | |

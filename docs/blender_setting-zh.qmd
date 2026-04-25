@@ -7,7 +7,7 @@
 图像/视频所在的[图像纹理节点](https://docs.blender.org/manual/en/latest/render/shader_nodes/textures/image.html)中的以下设置有可能会影响到部分特效：
 
 - **Interpolation**: 图像的插值算法。如果使用像素风格的特效，建议设置为`Closest`；如果想让图像较为平滑，则建议使用`Smart`或`Cubic`。
-- **Extension**: 主要影响“Distortion”类别的特效，当特效将画面扭曲从而产生空白时，根据该选项决定是否扩展纹理以补全空白区域。请注意，部分转场效果会强制忽略此选项。
+- **Extension**: 主要影响“Distortion”类别的特效，当特效将画面扭曲从而产生空白时，根据该选项决定是否扩展纹理以补全空白区域。
 
 插件在侧边栏中显示了这些属性以方便修改。
 

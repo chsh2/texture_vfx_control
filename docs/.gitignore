@@ -2,3 +2,4 @@
 /_artifacts
 /.quarto/
 **/*.quarto_ipynb
+*.sketch
