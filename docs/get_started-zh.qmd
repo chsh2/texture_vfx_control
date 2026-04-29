@@ -1,0 +1,19 @@
+# 基本操作 {.unnumbered}
+
+## 插件安装
+
+Texture VFX Control采用旧式Blender插件的标准。安装步骤如下：
+
+1. [下载](https://github.com/chsh2/texture_vfx_control/releases)`.zip`压缩包。
+2. 在`[偏好设置/Preferences] > [插件/Add-ons]`面板中载入该压缩包。
+
+![](images/install.png)
+
+## 启动功能
+
+插件要求当前物体存在材质，并且材质包含[图像纹理节点](https://docs.blender.org/manual/en/latest/render/shader_nodes/textures/image.html)。通常推荐使用Blender内置的`[Add/添加] > [Image/图像] > [Mesh Plane/网格平面]`菜单项来导入图片或视频。
+
+满足条件时，3D视图的侧边栏会出现`TexFX`标签，本插件的功能可在该标签页内使用。
+
+要启用插件功能，请点击侧边栏中`[Convert a Texture to FX Node]`按钮，并在下拉菜单中选择图像/视频的名称。操作成功后，侧边栏中将出现更多面板，以供进行后续的播放控制与特效控制等操作。
+

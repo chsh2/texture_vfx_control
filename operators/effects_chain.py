@@ -21,7 +21,7 @@ class PushEffectOperator(bpy.types.Operator):
     bl_idname = "tfx.push_effect"
     bl_label = "New Effect"
     bl_category = 'View'
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
     
     fx_group_name: bpy.props.StringProperty(default='')
     param_group_name: bpy.props.StringProperty(default='')
@@ -52,7 +52,7 @@ class PopEffectOperator(bpy.types.Operator):
     bl_idname = "tfx.pop_effect"
     bl_label = "Remove Effect"
     bl_category = 'View'
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     depth: bpy.props.IntProperty()
 
@@ -74,7 +74,7 @@ class SwapEffectOperator(bpy.types.Operator):
     bl_idname = "tfx.swap_effect"
     bl_label = "Swap Effect"
     bl_category = 'View'
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
 
     depth: bpy.props.IntProperty() # Swap effects at depth and depth+1
 
@@ -108,7 +108,7 @@ class SetEffectLocationDriverOperator(bpy.types.Operator):
     bl_idname = "tfx.set_effect_location_driver"
     bl_label = "Set Effect Location Driver"
     bl_category = 'View'
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
     
     obj_name: bpy.props.StringProperty(
         name='Object',
@@ -144,7 +144,7 @@ class SetEffectTemporalDriverOperator(bpy.types.Operator):
     bl_idname = "tfx.set_effect_temporal_driver"
     bl_label = "Set Effect Temporal Driver"
     bl_category = 'View'
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
     
     node_group_name: bpy.props.StringProperty()
     param_name: bpy.props.StringProperty()
@@ -186,7 +186,7 @@ class SetEffectTemporalDriverOperator(bpy.types.Operator):
             self.length = 1
         if self.param_name == 'Random Seed':
             rate = 1.0 / self.length
-        elif self.param_name == 'Phase':
+        elif self.param_name.startswith("Phase"):
             rate = 2.0 * pi / self.length
         anim_utils.set_linear_temporal_driver(tree, self.param_name, rate, self.offset)
         
@@ -197,14 +197,9 @@ class SetTransitionPlaybackDriverOperator(bpy.types.Operator):
     bl_idname = "tfx.set_transition_playback_driver"
     bl_label = "Set Transition Playback Driver"
     bl_category = 'View'
-    bl_options = {'REGISTER', 'UNDO'}
+    bl_options = {'REGISTER', 'UNDO', 'INTERNAL'}
     
     node_group_name: bpy.props.StringProperty()
-    bind_to: bpy.props.EnumProperty(
-        items=[ ('PLAYHEAD', 'Playhead', ''),
-                ('STRIP', 'NLA Track Strip', '')],
-        default='PLAYHEAD',
-    )
     transition_type: bpy.props.EnumProperty(
         items=[ ('In', '', ''),
                 ('Out', '', '')],
@@ -218,8 +213,9 @@ class SetTransitionPlaybackDriverOperator(bpy.types.Operator):
     
     def draw(self, context):
         layout = self.layout
-        #layout.prop(self, 'bind_to')
-        layout.prop(self, "length")
+        top_node = context.object.active_material.node_tree.nodes.active
+        if top_node.node_tree["tfxPlaybackControl"] == 1:
+            layout.prop(self, "length")
     
     def invoke(self, context, event):
         top_node = context.object.active_material.node_tree.nodes.active
@@ -234,42 +230,22 @@ class SetTransitionPlaybackDriverOperator(bpy.types.Operator):
         image_node, media_node_tree = node_utils.get_active_image_node()
         suffix = media_node_tree.name[len("tfx_texture_"):]
         
-        if self.bind_to == 'PLAYHEAD':
-            if top_node.node_tree["tfxPlaybackControl"] == 1:
-                datapath_duration = 'tfxFrameDuration'
-                datapath_playhead = 'tfxPlayhead'
-                subject = top_node.node_tree
-                id_type = 'NODETREE'
-            else:
-                datapath_duration = f'tfxFrameDuration_{suffix}'
-                datapath_playhead = f'tfxPlayhead_{suffix}'
-                subject = anim_utils.get_global_playback_manager()
-                id_type = 'OBJECT'
+        if top_node.node_tree["tfxPlaybackControl"] == 1:
+            datapath_duration = 'tfxFrameDuration'
+            datapath_playhead = 'tfxPlayhead'
+            subject = top_node.node_tree
+            id_type = 'NODETREE'
             anim_utils.set_playhead_driver(
                 param_tree, self.length, subject, id_type, datapath_playhead, datapath_duration, self.transition_type == 'Out'
             )
-        else:
-            subject = anim_utils.get_global_playback_manager()
-            track_name, strip_name = None, None
-            if subject and subject.animation_data:
-                for track in subject.animation_data.nla_tracks:
-                    for strip in track.strips:
-                        if strip.action:
-                            fcurves = anim_utils.get_action_fcurves(strip.action)
-                            for fc in fcurves:
-                                if fc.data_path == f'["tfxPlayhead_{suffix}"]':
-                                    track_name = track.name
-                                    strip_name = strip.name
-                                    break
-                            else:
-                                continue
-                            break
-            if track_name is None:
-                self.report({'INFO'}, "The media does not have any action strips.")
+        elif top_node.node_tree["tfxPlaybackControl"] == 2:
+            for a in bpy.data.actions:
+                if "tfxMediaNodeGroup" in a and a["tfxMediaNodeGroup"] == media_node_tree:
+                    action = a
+                    break
+            else:
                 return {'CANCELLED'}
-            anim_utils.set_strip_driver(
-                param_tree, self.length, subject, track_name, strip_name, self.transition_type == 'Out'
-            )
+            anim_utils.set_strip_transition_driver(param_tree, action, self.transition_type == 'Out')
                 
         return {'FINISHED'}
 

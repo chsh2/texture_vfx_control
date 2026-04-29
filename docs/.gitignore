@@ -1,0 +1,5 @@
+/_book
+/_artifacts
+/.quarto/
+**/*.quarto_ipynb
+*.sketch

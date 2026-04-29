@@ -1,0 +1,83 @@
+::: {.content-hidden when-profile="zh"}
+# Introduction {.unnumbered}
+
+![](images/cover.png)
+
+Texture VFX Control is a Blender add-on working on media (videos, images and image sequences) as material textures, enabling management of media playback progress and visual effects. The users can have the video editing/composition workflow in the 3D space, therefore facilitating the creation of motion graphics and reels.
+
+Main features:
+
+- **Media Playback Control**
+  - Cropping, speed adjustment and reverse playback controlled by keyframes
+  - A workspace for arranging multiple video clips
+- **Effects Chain Control**
+  - Quick application of over 40 popular video effects
+  - Non-destructive editing of multiple effects as a chain
+  - Save effects as presets and transfer them between objects
+
+Current version: `v1.1`
+
+## Requirements
+
+Blender 4.2 - 5.1
+
+## Credits
+
+The shader node groups in this add-on are inspired by the following references:
+
+- https://github.com/obsproject/obs-studio/blob/master/plugins/obs-filters/data/chroma_key_filter.effect
+- https://godotshaders.com/shader/green-screen-chromakey/
+- https://www.shadertoy.com/view/7sscD4
+- https://www.shadertoy.com/view/4s2GRR
+- https://www.shadertoy.com/view/ls3cDB
+
+The following assets are used for demonstration purposes in the documentation:
+
+- Adrian Hoparda at [pexels.com](https://www.pexels.com/@adrian-hoparda-1684220/)
+- BoVibol, fawaz-qureshi at [pixabay.com](https://pixabay.com/)
+- Big Buck Bunny from [Blender Foundation](https://peach.blender.org/)
+
+:::
+
+
+::: {.content-visible when-profile="zh"}
+# 简介 {.unnumbered}
+
+![](images/cover.png)
+
+Texture VFX Control是一个Blender插件，作用于媒体纹理（图片、图片序列和视频），利用节点组和驱动器来实现媒体的播放进度管理和特效管理。插件的目的是让用户在三维空间中仍可按照视频编辑/合成软件的习惯进行操作，从而提高动态图形与视频特效的制作效率。
+
+本插件的主要功能如下：
+
+- 媒体播放管理
+  - 视频剪裁/变速/倒放、利用关键帧控制播放进度
+  - 全新的管理器界面，用来组织同一个场景中的多个视频
+- 视频特效管理
+  - 一键应用超过40种常见的视频特效/转场
+  - 复数特效的链式管理与非破坏性编辑
+  - 保存特效作为预置、为多个物体批量应用特效
+
+当前插件版本： `v1.1`
+
+## 系统需求
+
+Blender 4.2 ~ 5.1
+
+## 致谢
+
+特效节点组的实现参考了以下代码：
+
+- https://github.com/obsproject/obs-studio/blob/master/plugins/obs-filters/data/chroma_key_filter.effect
+- https://godotshaders.com/shader/green-screen-chromakey/
+- https://www.shadertoy.com/view/7sscD4
+- https://www.shadertoy.com/view/4s2GRR
+- https://www.shadertoy.com/view/ls3cDB
+
+功能演示中使用的示例素材来源：
+
+- Adrian Hoparda at [pexels.com](https://www.pexels.com/@adrian-hoparda-1684220/)
+- BoVibol, fawaz-qureshi at [pixabay.com](https://pixabay.com/)
+- Big Buck Bunny from [Blender Foundation](https://peach.blender.org/)
+
+
+:::

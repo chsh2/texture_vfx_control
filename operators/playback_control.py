@@ -1,5 +1,6 @@
 import bpy
 from ..utils import media_utils, anim_utils, node_utils, asset_manager
+from ..operators.playback_control_modal import protect_nla_tracks
 
 class AddPlaybackDriverOperator(bpy.types.Operator):
     """Set up a driver to control the playback of image sequence/movie texture"""
@@ -29,6 +30,16 @@ class AddPlaybackDriverOperator(bpy.types.Operator):
                 ('GLOBAL', 'Global Manager (Beta)', 'All keyframes will be stored in an object named "TfxPlaybackManager" as an NLA strip')],
         default='LOCAL',
         description='Determine to set keyframes inside the material node group itself or inside another object'
+    )
+    hide_before: bpy.props.BoolProperty(
+        name='Before Start',
+        default=True,
+        description='Make the video strip invisble before the start frame'
+    )
+    hide_after: bpy.props.BoolProperty(
+        name='After End',
+        default=True,
+        description='Make the video strip invisble after the end frame'
     )
     add_keyframes: bpy.props.BoolProperty(
         name='Add Keyframes',
@@ -89,6 +100,11 @@ class AddPlaybackDriverOperator(bpy.types.Operator):
             row.prop(self, "playback_pingpong")
             if self._source == 'MOVIE':
                 box.prop(self, "fit_scene_fps")
+        if self.add_keyframes or self.controller == 'GLOBAL':
+            layout.label(text="Hide the video:")
+            row = layout.box().row()
+            row.prop(self, "hide_before")
+            row.prop(self, "hide_after")
         
     def invoke(self, context, event):
         image_node, _ = node_utils.get_active_image_node()
@@ -151,9 +167,18 @@ class AddPlaybackDriverOperator(bpy.types.Operator):
         fc.driver.expression = "int(min(max(floor(p*d)+s-t, s-t), s+d-t-1))"
         
         # Remove existing keyframes
+        dp_playhead_key = f'["{datapath_playhead}"]'
         if subject.animation_data and subject.animation_data.action:
             fcurves = anim_utils.get_action_fcurves(subject.animation_data.action)
-            fc = fcurves.find(f'["{datapath_playhead}"]')
+            fc = fcurves.find(dp_playhead_key)
+            if fc:
+                fcurves.remove(fc)
+
+        dp_vis_key = f'nodes["{top_node.name}"].inputs[1].default_value'
+        subject_vis = context.object.active_material.node_tree
+        if subject_vis.animation_data and subject_vis.animation_data.action:
+            fcurves = anim_utils.get_action_fcurves(subject_vis.animation_data.action)
+            fc = fcurves.find(dp_vis_key)
             if fc:
                 fcurves.remove(fc)
 
@@ -163,21 +188,22 @@ class AddPlaybackDriverOperator(bpy.types.Operator):
             next_keyframe = frame_current
             pingpong = False
             
-            playback_rate = self.playback_rate if not self.controller == 'GLOBAL' else 1
             num_loops = self.playback_loops if not self.controller == 'GLOBAL' else int(1+self.playback_pingpong)
             playback_reversed = self.playback_reversed if not self.controller == 'GLOBAL' else False
             
+            playback_rate = self.playback_rate
             if self.fit_scene_fps:
                 playback_rate = playback_rate * media_fps / scene_fps
+            len_loop = max(1, round( (frame_duration-1.0) / (playback_rate if not self.controller == 'GLOBAL' else 1)) )
             for _ in range(num_loops):
                 # Set start frame
                 subject[datapath_playhead] = float(playback_reversed ^ pingpong)
-                subject.keyframe_insert(f'["{datapath_playhead}"]')
+                subject.keyframe_insert(dp_playhead_key)
                 # Set end frame
-                next_keyframe += max(1, round( (frame_duration-1.0) / playback_rate) )
+                next_keyframe += len_loop
                 bpy.context.scene.frame_set(next_keyframe)
                 subject[datapath_playhead] = 1.0 - float(playback_reversed ^ pingpong)
-                subject.keyframe_insert(f'["{datapath_playhead}"]')
+                subject.keyframe_insert(dp_playhead_key)
                 next_keyframe += 1
                 bpy.context.scene.frame_set(next_keyframe)
                 
@@ -186,21 +212,59 @@ class AddPlaybackDriverOperator(bpy.types.Operator):
                     
             fcurves = anim_utils.get_action_fcurves(subject.animation_data.action)
             for fcurve in fcurves:
-                if fcurve.data_path == f'["{datapath_playhead}"]':
+                if fcurve.data_path == dp_playhead_key:
                     for point in fcurve.keyframe_points:
                         point.interpolation = 'LINEAR'
+
+            if self.controller == 'GLOBAL':
+                len_loop = max(1, round( (frame_duration-1.0) / playback_rate) )
+                if self.playback_pingpong:
+                    len_loop = len_loop * 2 + 1
+                    frame_end = frame_current + int(self.playback_loops * 0.5 * len_loop)
+                else:
+                    frame_end = frame_current + self.playback_loops * len_loop
+            else:
+                len_loop += 1
+                frame_end = frame_current + self.playback_loops * len_loop - 1
+            if self.hide_before:
+                bpy.context.scene.frame_set(frame_current - 1)
+                top_node.inputs[1].default_value = True
+                subject_vis.keyframe_insert(dp_vis_key)
+                bpy.context.scene.frame_set(frame_current)
+                top_node.inputs[1].default_value = False
+                subject_vis.keyframe_insert(dp_vis_key)
+            if self.hide_after:
+                bpy.context.scene.frame_set(frame_end)
+                top_node.inputs[1].default_value = False
+                subject_vis.keyframe_insert(dp_vis_key)
+                bpy.context.scene.frame_set(frame_end + 1)
+                top_node.inputs[1].default_value = True
+                subject_vis.keyframe_insert(dp_vis_key)
+
             bpy.context.scene.frame_set(frame_current)
         
         # Convert keyframes to NLA strip
         if self.controller == 'GLOBAL':
             track = subject.animation_data.nla_tracks.new()
             strip = track.strips.new("tmp", context.scene.frame_current, subject.animation_data.action)
+            subject.animation_data.action = None
             track.name = image_node.image.name
             strip.name = image_node.image.name
             strip.use_reverse = self.playback_reversed
-            strip.scale = 1.0 / self.playback_rate
+            strip.scale = 1 / playback_rate
             strip.repeat = self.playback_loops / (1.0 + self.playback_pingpong)
-            subject.animation_data.action = None
+            strip.action["tfxMediaNodeGroup"] = media_node_tree
+            strip.action["tfxHideBefore"] = self.hide_before
+            strip.action["tfxHideAfter"] = self.hide_after
+            strip.action["tfxStripStart"] = frame_current
+            strip.action["tfxStripEnd"] = frame_end
+            strip.action["tfxInLength"] = 12
+            strip.action["tfxOutLength"] = 12
+            for dp in ("tfxInLength", "tfxOutLength"):
+                ui = strip.action.id_properties_ui(dp)
+                ui.update(min=1)
+            strip.action.update_tag()
+            protect_nla_tracks()
         
         bpy.ops.tfx.refresh_playback_drivers()
         return {'FINISHED'}
@@ -259,9 +323,24 @@ class RemovePlaybackDriverOperator(bpy.types.Operator):
                             break
                 for track in tracks_to_remove:
                     subject.animation_data.nla_tracks.remove(track)
+
+            actions_to_remove = []
+            for action in bpy.data.actions:
+                if "tfxMediaNodeGroup" in action and action["tfxMediaNodeGroup"] == media_node_tree:
+                    actions_to_remove.append(action)
+            for action in actions_to_remove:
+                bpy.data.actions.remove(action)
                 
             del top_node.node_tree["tfxPlaybackControl"]
-                
+
+        subject_vis = context.object.active_material.node_tree
+        if subject_vis.animation_data and subject_vis.animation_data.action:
+            fcurves = anim_utils.get_action_fcurves(subject_vis.animation_data.action)
+            fc = fcurves.find(f'nodes["{top_node.name}"].inputs[1].default_value')
+            if fc:
+                fcurves.remove(fc)
+        top_node.inputs[1].default_value = False
+
         return {'FINISHED'}
     
 class OpenGlobalManagerWorkspaceOperator(bpy.types.Operator):
@@ -291,6 +370,9 @@ class RefreshDriversOperator(bpy.types.Operator):
         image_node, media_node_tree = node_utils.get_active_image_node()
         if media_node_tree.animation_data:
             for fc in media_node_tree.animation_data.drivers:
+                for var in fc.driver.variables:
+                    if var.targets[0].id_type == 'SCENE':
+                        var.targets[0].id = bpy.context.scene
                 tmp = fc.driver.expression
                 fc.driver.expression = tmp
         return {'FINISHED'}

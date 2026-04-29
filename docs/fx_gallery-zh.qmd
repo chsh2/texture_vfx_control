@@ -1,0 +1,84 @@
+# 特效一览 {.unnumbered}
+
+## 色彩调节
+| ![](images/fx/color_invert.png) | ![](images/fx/color_hsv.png) | ![](images/fx/color_bc.png) | ![](images/fx/color_curve.png) |
+| --- | --- | --- | --- |
+| Invert | HSV | Brightness/Contrast | RGB Curve |
+| 反相 | 色相/饱和度/明度 | 亮度/对比度 | RGB曲线 |
+
+| ![](images/fx/color_gradientmap.png) | ![](images/fx/color_lineargradient.png) | ![](images/fx/color_quantization.png) | ![](images/fx/placeholder.png) |
+| --- | --- | --- | --- |
+| Gradient Map | Linear Gradient | Color Quantization |
+| 渐变映射 | 线性渐变 | 色彩量化 |
+
+## 透明度相关
+
+| ![](images/fx/alpha_choker.png) | ![](images/fx/alpha_chromakey.png) | ![](images/fx/alpha_clip.png) | ![](images/fx/placeholder.png) |
+| --- | --- | --- | --- |
+| Alpha Choker | Chroma key | Alpha Clip |
+| 透明度收缩 | 色键 | 透明度裁剪 |
+
+| ![](images/fx/alpha_filltransparency.png) | ![](images/fx/alpha_lumakey.png) | ![](images/fx/placeholder.png) | ![](images/fx/placeholder.png) |
+| --- | --- | --- | --- |
+| Fill Transparency | Luma Key |  |
+| 填充透明部分 | 亮度键 |  |
+
+
+## 模糊与增强
+
+| ![](images/fx/enh_edgedetection.png) | ![](images/fx/enh_grainyblur.png) | ![](images/fx/enh_outline.png) | ![](images/fx/enh_radialblur.png) |
+| --- | --- | --- | --- |
+| Edge Detection | Grainy Blur | Outline | Radial Blur |
+| 边缘检测 | 颗粒模糊 | 描边 | 径向模糊 |
+
+| ![](images/fx/enh_sharpen.png) | ![](images/fx/enh_rim.png) | ![](images/fx/placeholder.png) | ![](images/fx/placeholder.png) |
+| --- | --- | --- | --- |
+| Sharpen | Rim Light/Shadow |  |  |
+| 锐化 | 边缘光/投影 |  |  |
+
+
+## 变形
+
+| ![](images/fx/distortion_basictransform.png) | ![](images/fx/distortion_fisheye.png) | ![](images/fx/distortion_kaleidoscope.png) | ![](images/fx/distortion_shake.png) |
+| --- | --- | --- | --- |
+| Basic Transform | Fisheye | Kaleidoscope | Shake |
+| 基本变换 | 鱼眼 | 万花筒 | 镜头晃动 |
+
+| ![](images/fx/distortion_swirl.png) | ![](images/fx/distortion_turbulence.png) | ![](images/fx/distortion_wave.png) | ![](images/fx/placeholder.png) |
+| --- | --- | --- | --- |
+| Swirl | Turbulence | Wave | |
+| 旋涡 | 湍流 | 波浪 | |
+
+
+## 风格化
+
+| ![](images/fx/style_dither.png) | ![](images/fx/style_halftone.png) | ![](images/fx/style_pixelate.png) | ![](images/fx/style_rgbsplit.png) |
+| --- | --- | --- | --- |
+| Dither | Halftone | Pixelate | RGB Split |
+| 抖动 | 半色调 | 像素化 | RGB分离 |
+
+| ![](images/fx/style_stainedglass.png) | ![](images/fx/style_vignette.png) | ![](images/fx/placeholder.png) | ![](images/fx/placeholder.png) |
+| --- | --- | --- | --- |
+| Stained Glass | Vignette | | |
+| 彩色玻璃 | 暗角 | | |
+
+
+## 模拟
+
+| ![](images/fx/sim_filmgrain.png) | ![](images/fx/sim_glitch.png) | ![](images/fx/sim_lcd.png) | ![](images/fx/sim_scanline.png) |
+| --- | --- | --- | --- |
+| Film Grain | Glitch | LCD | Scanline |
+| 胶片颗粒 | 故障 | LCD | 扫描线 |
+
+
+## 转场
+
+| ![](images/fx/tran_burn.png) | ![](images/fx/tran_clockwipe.png) | ![](images/fx/tran_fade.png) | ![](images/fx/tran_linearslide.png) |
+| --- | --- | --- | --- |
+| Burn | Clock Wipe | Fade | Linear Slide |
+| 燃烧 | 时钟擦除 | 淡入淡出 | 线性滑动 |
+
+| ![](images/fx/tran_linearwipe.png) | ![](images/fx/tran_pagecurl.png) | ![](images/fx/tran_tile.png) | ![](images/fx/placeholder.png) |
+| --- | --- | --- | --- |
+| Linear Wipe | Page Curl | Tile | |
+| 线性擦除 | 翻页 | 方格平铺 | |

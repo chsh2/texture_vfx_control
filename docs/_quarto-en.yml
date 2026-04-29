@@ -1,0 +1,34 @@
+project:
+  output-dir: ./_book
+
+book:
+  title: "Texture VFX Control: User Guide"
+  chapters:
+    - index.qmd
+    - get_started.qmd
+    - part: fx.qmd
+      chapters:
+        - fx_gallery.qmd
+    - part: playback.qmd
+      chapters:
+        - playback_global.qmd
+    - blender_setting.qmd
+    - part: "Developer Notes"
+      chapters:
+        - concept.qmd
+        - data_structure.qmd
+  navbar:
+    right:
+      - href: .
+        text: English
+      - href: ./zh
+        text: 中文
+            
+lang: en
+
+format:
+  html:
+    theme:
+      light: flatly
+      dark: darkly
+    respect-user-color-scheme: true

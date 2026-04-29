@@ -1,0 +1,23 @@
+project:
+  output-dir: ./_artifacts
+
+book:
+  title: "Texture VFX Control: User Guide"
+  chapters:
+    - index.qmd
+    - get_started.qmd
+    - fx.qmd
+    - fx_gallery.qmd
+    - playback.qmd
+    - playback_global.qmd
+    - blender_setting.qmd
+    - concept.qmd
+    - data_structure.qmd
+
+lang: en
+
+format:
+  pdf:
+    documentclass: scrreprt
+  epub:
+    number-depth: 1
