@@ -3,7 +3,7 @@ bl_info = {
     "author" : "https://github.com/chsh2/texture_vfx_control",
     "description" : "Playback and VFX management for media textures to provide a video-editor-like experience in the 3D space",
     "blender" : (4, 2, 0),
-    "version" : (1, 0, 0),
+    "version" : (1, 1, 0),
     "warning" : "This addon is still in an early stage of development",
     "doc_url": "",
     "wiki_url": "",
